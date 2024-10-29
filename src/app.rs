@@ -43,6 +43,12 @@ impl ApplicationHandler<UserEvent> for APP<'_> {
 
     fn window_event(&mut self, _event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
+            WindowEvent::Resized(_) => {
+                let size = self.window.as_ref().unwrap().inner_size();
+                let state = self.state.as_mut().unwrap();
+
+                state.resize(size);
+            }
             WindowEvent::RedrawRequested => {
                 let state = self.state.as_mut().unwrap();
                 let result = state.render();

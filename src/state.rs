@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use wgpu::util::{DeviceExt, RenderEncoder};
+use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::vertex;
+use crate::{vertex, world};
 
 pub struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -132,16 +132,16 @@ impl<'a> State<'a> {
             timestamp_writes: None,
         };
 
+        let vertices = &world::tiles::Tile::vertices();
         {
             let vertex_buffer_desc = wgpu::util::BufferInitDescriptor {
                 label: Some("vertex_buffer"),
-                contents: bytemuck::cast_slice(&vertex::QUAD_VERTICES),
+                contents: bytemuck::cast_slice(vertices),
                 usage: wgpu::BufferUsages::VERTEX,
             };
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let map = crate::block::Map::new();
-            let instances = vertex::create_instance_data(&map);
+            let instances = vertex::create_instance_data();
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
                 label: Some("instance_buffer"),
                 contents: bytemuck::cast_slice(&instances),
@@ -161,7 +161,7 @@ impl<'a> State<'a> {
 
             render_pass.set_bind_group(0, &screen_bind_group, &[]);
 
-            render_pass.draw(0..6, 0..instances.len() as u32);
+            render_pass.draw(0..vertices.len() as u32, 0..instances.len() as u32);
         }
         self.queue.submit(std::iter::once(encoder.finish()));
 
@@ -176,7 +176,7 @@ fn build_pipeline(
     config: &wgpu::SurfaceConfiguration,
     bind_group_layout: &wgpu::BindGroupLayout,
 ) -> wgpu::RenderPipeline {
-    let shader_desc = wgpu::include_wgsl!("shaders/block.wgsl");
+    let shader_desc = wgpu::include_wgsl!("shaders/tile.wgsl");
     let shader = device.create_shader_module(shader_desc);
 
     let layout_desc = wgpu::PipelineLayoutDescriptor {

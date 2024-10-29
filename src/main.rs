@@ -1,7 +1,7 @@
 mod app;
-mod block;
 mod state;
 mod vertex;
+mod world;
 
 fn main() {
     let event_loop = winit::event_loop::EventLoop::<app::UserEvent>::with_user_event()
