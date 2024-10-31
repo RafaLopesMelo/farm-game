@@ -3,7 +3,7 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::{vertex, world};
+use crate::{render, world};
 
 pub struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -132,7 +132,7 @@ impl<'a> State<'a> {
             timestamp_writes: None,
         };
 
-        let vertices = &world::tiles::Tile::vertices();
+        let vertices = &render::tiles::TileRender::vertices();
         {
             let vertex_buffer_desc = wgpu::util::BufferInitDescriptor {
                 label: Some("vertex_buffer"),
@@ -141,10 +141,13 @@ impl<'a> State<'a> {
             };
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let instances = vertex::create_instance_data();
+            let chunk = world::chunks::Chunk::new();
+            let chunk_render = render::chunks::ChunkRender::new(&chunk);
+            let instances = chunk_render.tiles();
+
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
                 label: Some("instance_buffer"),
-                contents: bytemuck::cast_slice(&instances),
+                contents: bytemuck::cast_slice(instances),
                 usage: wgpu::BufferUsages::VERTEX,
             };
             let instance_buffer = self.device.create_buffer_init(&instance_buffer_desc);
@@ -199,7 +202,10 @@ fn build_pipeline(
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
-            buffers: &[vertex::Vertex::desc(), vertex::Instance::desc()],
+            buffers: &[
+                render::vertex::Vertex::desc(),
+                render::tiles::TileRender::desc(),
+            ],
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         },
         fragment: Some(wgpu::FragmentState {
@@ -209,15 +215,19 @@ fn build_pipeline(
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         }),
         primitive: wgpu::PrimitiveState {
+            // How to interpret the vertices. Here each set of 3 vertices composes a new triangle
             topology: wgpu::PrimitiveTopology::TriangleList,
             strip_index_format: None,
+            // Triangles drawn in clockwise order is considered to be front-facing. So is not discarded by the culling
             front_face: wgpu::FrontFace::Ccw,
+            // Determines whether certain faces of 3D objects should be rendered or discarded.
             cull_mode: None,
             polygon_mode: wgpu::PolygonMode::Fill,
             unclipped_depth: false,
             conservative: false,
         },
         depth_stencil: None,
+        // Is used to avoid aliasing
         multisample: wgpu::MultisampleState {
             count: 1,
             mask: !0,

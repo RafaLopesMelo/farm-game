@@ -1,6 +1,7 @@
 struct VertexInput {
-    @location(0) position: vec2<u32>,
-    @location(1) instance_position: vec2<u32>,
+    @location(0) vertex_pos: vec2<u32>,
+    @location(1) instance_pos: vec2<u32>,
+    @location(2) kind: u32,
 }
 
 struct Screen {
@@ -22,7 +23,7 @@ fn to_ndc(pixels: u32, physical_size: u32) -> f32 {
 fn vs_main(input: VertexInput) -> VertexOutput {
     var out: VertexOutput;
 
-    let pos = input.position + input.instance_position;
+    let pos = input.vertex_pos + input.instance_pos;
     let x = to_ndc(pos.x, screen.size.x);
     let y = to_ndc(pos.y, screen.size.y);
     out.position = vec4<f32>(x, y, 0.0, 1.0);

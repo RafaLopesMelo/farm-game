@@ -1,30 +1,20 @@
-use crate::vertex::Vertex;
+#[derive(Copy, Clone)]
+pub enum TileKind {
+    Grass = 0,
+}
 
-/// Size of a tile in pixels
-pub const SIZE: u32 = 16;
-
-#[derive(Debug, Clone, Copy)]
-pub struct Tile {}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Tile {
+    kind: TileKind,
+}
 
 impl Tile {
-    pub fn vertices() -> [Vertex; 6] {
-        let vertices: [Vertex; 6] = [
-            Vertex { position: [0, 0] },
-            Vertex {
-                position: [SIZE, 0],
-            },
-            Vertex {
-                position: [SIZE, SIZE],
-            },
-            Vertex { position: [0, 0] },
-            Vertex {
-                position: [0, SIZE],
-            },
-            Vertex {
-                position: [SIZE, SIZE],
-            },
-        ];
+    pub fn new(kind: TileKind) -> Self {
+        return Self { kind };
+    }
 
-        return vertices;
+    pub fn kind(&self) -> TileKind {
+        return self.kind;
     }
 }

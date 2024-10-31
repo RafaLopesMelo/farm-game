@@ -1,6 +1,6 @@
 mod app;
+mod render;
 mod state;
-mod vertex;
 mod world;
 
 fn main() {

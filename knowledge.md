@@ -1,3 +1,5 @@
+380
+
 # Game Definitions
 
 - The map is composed of chunks of size 32x32 blocks
@@ -6,6 +8,18 @@
 # sRGB
 
 Is the international standard to represent colors in software and hardware
+
+# Primitive Topology
+
+How to interpret the vertices. Here each set of 3 vertices composes a new triangle
+
+# Cull Mode
+
+Determines whether certain faces of 3D objects should be rendered or discarded.
+It is used to improve performance by avoiding drawing of faces that aren't visible to the viewer
+
+Triangles drawn in clockwise order is considered to be front-facing. So is not discarded by the culling
+
 
 # Render Pass
 
