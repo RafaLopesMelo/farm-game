@@ -1,6 +1,7 @@
 #[derive(Copy, Clone)]
 pub enum TileKind {
     Grass = 0,
+    Water = 1,
 }
 
 #[repr(C)]
