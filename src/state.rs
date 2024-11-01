@@ -141,13 +141,13 @@ impl<'a> State<'a> {
             };
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let chunk = world::chunks::Chunk::new();
-            let chunk_render = render::chunks::ChunkRender::new(&chunk);
-            let instances = chunk_render.tiles();
+            let world = world::world::World::new();
+            let world_render = render::world::WorldRender::new(world);
+            let instances = world_render.tiles();
 
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
                 label: Some("instance_buffer"),
-                contents: bytemuck::cast_slice(instances),
+                contents: bytemuck::cast_slice(&instances),
                 usage: wgpu::BufferUsages::VERTEX,
             };
             let instance_buffer = self.device.create_buffer_init(&instance_buffer_desc);

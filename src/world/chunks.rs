@@ -8,8 +8,8 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn new() -> Self {
-        let tiles = [[Tile::new(TileKind::Water); CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+    pub fn new(kind: TileKind) -> Self {
+        let tiles = [[Tile::new(kind); CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
         return Self { tiles };
     }
 
