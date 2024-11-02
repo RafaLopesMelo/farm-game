@@ -60,7 +60,11 @@ impl ApplicationHandler<UserEvent> for APP<'_> {
                     Err(wgpu::SurfaceError::OutOfMemory) => std::process::exit(1),
                 }
             }
-            _ => {}
+            _ => {
+                let state = self.state.as_mut().unwrap();
+                state.camera_controller.handle_events(event);
+                state.update_camera();
+            }
         }
     }
 }
