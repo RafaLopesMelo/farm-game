@@ -14,14 +14,14 @@ impl World {
         for x in 0..6 {
             let mut chunk = vec![];
             for y in 0..2 {
-                let coordinate = [x * CHUNK_SIZE, y * CHUNK_SIZE];
+                let coords = [x * CHUNK_SIZE, y * CHUNK_SIZE];
                 let is_odd = y % 2 == 1;
                 let kind = if is_odd {
                     TileKind::Grass
                 } else {
                     TileKind::Water
                 };
-                chunk.push(Chunk::new(kind, coordinate));
+                chunk.push(Chunk::new(kind, coords));
             }
             chunks.push(chunk);
         }

@@ -1,7 +1,8 @@
 struct VertexInput {
     @location(0) vertex_pos: vec2<u32>,
-    @location(1) instance_pos: vec2<u32>,
-    @location(2) kind: u32,
+    @location(1) instance_coords: vec2<u32>,
+    @location(2) instance_pos: vec2<u32>,
+    @location(3) kind: u32,
 }
 
 struct Screen {
@@ -12,7 +13,7 @@ struct Screen {
 var<uniform> screen: Screen;
 
 struct Camera {
-    position: vec2<u32>,
+    coords: vec2<u32>,
 }
 
 @group(1) @binding(0)
@@ -21,7 +22,7 @@ var<uniform> camera: Camera;
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) kind: u32,
-    @location(1) instance_pos: vec2<u32>,
+    @location(1) instance_coords: vec2<u32>,
 }
 
 fn to_ndc(pixels: u32, physical_size: u32) -> f32 {
@@ -38,7 +39,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.position = vec4<f32>(x, y, 0.0, 1.0);
 
     out.kind = in.kind;
-    out.instance_pos = in.instance_pos;
+    out.instance_coords = in.instance_coords;
 
     return out;
 }
@@ -54,8 +55,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     var color = COLORS[in.kind];
 
-    let is_camera_x = (camera.position.x * 16) == in.instance_pos.x;
-    let is_camera_y = (camera.position.y * 16) == in.instance_pos.y;
+    let is_camera_x = camera.coords.x == in.instance_coords.x;
+    let is_camera_y = camera.coords.y == in.instance_coords.y;
     let is_camera = is_camera_x && is_camera_y;
 
     if is_camera {

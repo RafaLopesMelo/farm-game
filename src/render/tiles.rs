@@ -1,17 +1,21 @@
-use crate::world::tiles::Tile;
-
 use super::vertex::Vertex;
+use crate::world::tiles::Tile;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TileRender {
+    coords: [u32; 2],
     position: [u32; 2],
     kind: u32,
 }
 
 impl TileRender {
-    pub fn new(tile: &Tile, position: [u32; 2]) -> Self {
+    pub fn new(tile: &Tile) -> Self {
+        let coords: [u32; 2] = tile.coords();
+        let position: [u32; 2] = [coords[0] * Self::size(), coords[1] * Self::size()];
+
         return Self {
+            coords,
             position,
             kind: tile.kind() as u32,
         };
@@ -57,9 +61,14 @@ impl TileRender {
                     offset: 0,
                 },
                 wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Uint32,
+                    format: wgpu::VertexFormat::Uint32x2,
                     shader_location: 2,
                     offset: std::mem::size_of::<[u32; 2]>() as wgpu::BufferAddress,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Uint32,
+                    shader_location: 3,
+                    offset: std::mem::size_of::<[u32; 4]>() as wgpu::BufferAddress,
                 },
             ],
         };

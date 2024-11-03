@@ -11,22 +11,14 @@ pub struct ChunkRender {
 }
 
 impl ChunkRender {
-    pub fn new(chunk: &Chunk, position: [u32; 2]) -> Self {
-        let tile_size = TileRender::size();
-
+    pub fn new(chunk: &Chunk) -> Self {
         let tiles: [TileRender; CHUNK_TILE_AMOUNT] = chunk
             .tiles()
             .iter()
             .enumerate()
             .flat_map(|(x, row)| {
                 return row.iter().enumerate().map(move |(y, tile)| {
-                    return TileRender::new(
-                        tile,
-                        [
-                            x as u32 * tile_size + position[0],
-                            y as u32 * tile_size + position[1],
-                        ],
-                    );
+                    return TileRender::new(tile);
                 });
             })
             .collect::<Vec<TileRender>>()
