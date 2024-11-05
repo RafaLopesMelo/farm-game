@@ -1,4 +1,7 @@
-use crate::world::chunks::{Chunk, CHUNK_SIZE};
+use crate::world::{
+    camera::Camera,
+    chunks::{Chunk, CHUNK_SIZE},
+};
 
 use super::tiles::TileRender;
 
@@ -11,14 +14,13 @@ pub struct ChunkRender {
 }
 
 impl ChunkRender {
-    pub fn new(chunk: &Chunk) -> Self {
+    pub fn new(chunk: &Chunk, camera: &Camera) -> Self {
         let tiles: [TileRender; CHUNK_TILE_AMOUNT] = chunk
             .tiles()
             .iter()
-            .enumerate()
-            .flat_map(|(x, row)| {
-                return row.iter().enumerate().map(move |(y, tile)| {
-                    return TileRender::new(tile);
+            .flat_map(|row| {
+                return row.iter().map(|tile| {
+                    return TileRender::new(tile, camera);
                 });
             })
             .collect::<Vec<TileRender>>()

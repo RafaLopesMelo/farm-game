@@ -1,3 +1,5 @@
+use super::coords::Coords;
+
 #[derive(Copy, Clone)]
 pub enum TileKind {
     Grass = 0,
@@ -7,12 +9,12 @@ pub enum TileKind {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Tile {
-    coords: [i32; 2],
+    coords: Coords,
     kind: TileKind,
 }
 
 impl Tile {
-    pub fn new(kind: TileKind, coords: [i32; 2]) -> Self {
+    pub fn new(kind: TileKind, coords: Coords) -> Self {
         return Self { kind, coords };
     }
 
@@ -20,7 +22,7 @@ impl Tile {
         return self.kind;
     }
 
-    pub fn coords(&self) -> [i32; 2] {
+    pub fn coords(&self) -> Coords {
         return self.coords;
     }
 }

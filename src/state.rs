@@ -4,8 +4,8 @@ use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::{
-    render::{self, camera::Camera},
-    world,
+    render,
+    world::{self, camera::Camera},
 };
 
 pub struct State<'a> {
@@ -83,7 +83,7 @@ impl<'a> State<'a> {
         surface.configure(&device, &config);
 
         let camera_controller = render::camera::CameraController::new();
-        let camera_buffer = build_camera_buffer(&device, camera_controller.camera);
+        let camera_buffer = build_camera_buffer(&device, &camera_controller.camera);
 
         return Self {
             camera_buffer,
@@ -159,7 +159,8 @@ impl<'a> State<'a> {
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
             let world = world::world::World::new();
-            let world_render = render::world::WorldRender::new(world);
+            let world_render =
+                render::world::WorldRender::new(world, &self.camera_controller.camera);
             let instances = world_render.tiles();
 
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
@@ -196,7 +197,7 @@ impl<'a> State<'a> {
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
-            bytemuck::cast_slice(&[self.camera_controller.camera]),
+            bytemuck::cast_slice(&[self.camera_controller.camera.to_tuple()]),
         );
     }
 }
@@ -317,8 +318,8 @@ fn build_screen_bind_group(
     return (bind_group, layout);
 }
 
-fn build_camera_buffer(device: &wgpu::Device, camera: Camera) -> wgpu::Buffer {
-    let content = &[camera];
+fn build_camera_buffer(device: &wgpu::Device, camera: &Camera) -> wgpu::Buffer {
+    let content = &camera.to_tuple();
 
     let buffer_desc = wgpu::util::BufferInitDescriptor {
         label: Some("camera_buffer"),

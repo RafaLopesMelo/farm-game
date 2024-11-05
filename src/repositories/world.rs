@@ -1,5 +1,6 @@
 use crate::world::{
     chunks::{Chunk, CHUNK_SIZE},
+    coords::Coords,
     tiles::TileKind,
 };
 
@@ -21,19 +22,21 @@ impl WorldRepository {
         let mut chunks = Vec::new();
 
         let cs = CHUNK_SIZE as i32;
+        let mut kind_idx = 0;
         for x in left..right {
             let mut column = Vec::new();
 
-            let is_odd = x % 2 == 1;
-            let kind = if is_odd {
-                TileKind::Grass
-            } else {
-                TileKind::Water
-            };
-
             for y in top..bottom {
-                let chunk = Chunk::new(kind, [x * cs, y * cs]);
+                let is_odd = kind_idx % 2 == 1;
+                let kind = if is_odd {
+                    TileKind::Grass
+                } else {
+                    TileKind::Water
+                };
+
+                let chunk = Chunk::new(kind, Coords::new(x * cs, y * cs));
                 column.push(chunk);
+                kind_idx += 1;
             }
 
             chunks.push(column);

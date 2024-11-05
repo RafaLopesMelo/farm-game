@@ -1,4 +1,4 @@
-use crate::world::world::World;
+use crate::world::{camera::Camera, world::World};
 
 use super::{chunks::ChunkRender, tiles::TileRender};
 
@@ -7,13 +7,13 @@ pub struct WorldRender {
 }
 
 impl WorldRender {
-    pub fn new(world: World) -> Self {
+    pub fn new(world: World, camera: &Camera) -> Self {
         let chunks = world
             .chunks()
             .iter()
             .map(|row| {
                 return row.iter().map(move |chunk| {
-                    return ChunkRender::new(chunk);
+                    return ChunkRender::new(chunk, camera);
                 });
             })
             .flatten()

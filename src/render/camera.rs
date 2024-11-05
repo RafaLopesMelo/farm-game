@@ -3,17 +3,7 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
 };
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Camera {
-    coords: [i32; 2],
-}
-
-impl Camera {
-    pub fn new() -> Self {
-        Self { coords: [0, 0] }
-    }
-}
+use crate::world::camera::Camera;
 
 pub struct CameraController {
     pub camera: Camera,
@@ -73,25 +63,22 @@ impl CameraController {
 
     pub fn update(&mut self) {
         let s = Self::SPEED as i32;
+        let coords = &mut self.camera.coords;
 
         if self.right {
-            self.camera.coords[0] += s;
+            coords.move_x(s);
         }
 
         if self.left {
-            if self.camera.coords[0] > 0 {
-                self.camera.coords[0] -= s;
-            }
+            coords.move_x(-s);
         }
 
         if self.forward {
-            self.camera.coords[1] += s;
+            coords.move_y(s);
         }
 
         if self.backward {
-            if self.camera.coords[1] > 0 {
-                self.camera.coords[1] -= s;
-            }
+            coords.move_y(-s);
         }
     }
 }
