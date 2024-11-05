@@ -7,12 +7,12 @@ pub enum TileKind {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Tile {
-    coords: [u32; 2],
+    coords: [i32; 2],
     kind: TileKind,
 }
 
 impl Tile {
-    pub fn new(kind: TileKind, coords: [u32; 2]) -> Self {
+    pub fn new(kind: TileKind, coords: [i32; 2]) -> Self {
         return Self { kind, coords };
     }
 
@@ -20,7 +20,7 @@ impl Tile {
         return self.kind;
     }
 
-    pub fn coords(&self) -> [u32; 2] {
+    pub fn coords(&self) -> [i32; 2] {
         return self.coords;
     }
 }

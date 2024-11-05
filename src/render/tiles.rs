@@ -4,14 +4,15 @@ use crate::world::tiles::Tile;
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TileRender {
-    coords: [u32; 2],
+    coords: [i32; 2],
     position: [u32; 2],
     kind: u32,
 }
 
 impl TileRender {
     pub fn new(tile: &Tile) -> Self {
-        let coords: [u32; 2] = tile.coords();
+        let coords: [i32; 2] = tile.coords();
+        // TODO
         let position: [u32; 2] = [coords[0] * Self::size(), coords[1] * Self::size()];
 
         return Self {

@@ -1,7 +1,6 @@
-use super::{
-    chunks::{Chunk, CHUNK_SIZE},
-    tiles::TileKind,
-};
+use crate::repositories::world::WorldRepository;
+
+use super::chunks::Chunk;
 
 pub struct World {
     chunks: Vec<Vec<Chunk>>,
@@ -9,22 +8,8 @@ pub struct World {
 
 impl World {
     pub fn new() -> Self {
-        let mut chunks: Vec<Vec<Chunk>> = vec![];
-
-        for x in 0..6 {
-            let mut chunk = vec![];
-            for y in 0..2 {
-                let coords = [x * CHUNK_SIZE, y * CHUNK_SIZE];
-                let is_odd = y % 2 == 1;
-                let kind = if is_odd {
-                    TileKind::Grass
-                } else {
-                    TileKind::Water
-                };
-                chunk.push(Chunk::new(kind, coords));
-            }
-            chunks.push(chunk);
-        }
+        let repository = WorldRepository::new();
+        let chunks = repository.load_chunks([0, 0], 2);
 
         return Self { chunks };
     }

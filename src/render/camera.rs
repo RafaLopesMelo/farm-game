@@ -6,7 +6,7 @@ use winit::{
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Camera {
-    coords: [u32; 2],
+    coords: [i32; 2],
 }
 
 impl Camera {
@@ -72,23 +72,25 @@ impl CameraController {
     }
 
     pub fn update(&mut self) {
+        let s = Self::SPEED as i32;
+
         if self.right {
-            self.camera.coords[0] += Self::SPEED;
+            self.camera.coords[0] += s;
         }
 
         if self.left {
             if self.camera.coords[0] > 0 {
-                self.camera.coords[0] -= Self::SPEED;
+                self.camera.coords[0] -= s;
             }
         }
 
         if self.forward {
-            self.camera.coords[1] += Self::SPEED;
+            self.camera.coords[1] += s;
         }
 
         if self.backward {
             if self.camera.coords[1] > 0 {
-                self.camera.coords[1] -= Self::SPEED;
+                self.camera.coords[1] -= s;
             }
         }
     }
