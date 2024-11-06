@@ -16,15 +16,11 @@ impl Coords {
         return self.coords[1];
     }
 
-    pub fn move_x(&mut self, amount: i32) {
-        self.coords[0] += amount;
-    }
-
-    pub fn move_y(&mut self, amount: i32) {
-        self.coords[1] += amount;
-    }
-
     pub fn offset(&self, other: &Coords) -> [i32; 2] {
         return [other.x() - self.x(), other.y() - self.y()];
+    }
+
+    pub fn to_array(&self) -> [i32; 2] {
+        return self.coords;
     }
 }

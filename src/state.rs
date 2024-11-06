@@ -3,12 +3,10 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::{
-    render,
-    world::{self, camera::Camera},
-};
+use crate::{game, render, world::camera::Camera};
 
 pub struct State<'a> {
+    game: game::Game,
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -20,6 +18,8 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub async fn new(window: Arc<Window>) -> Self {
+        let game = game::Game::new();
+
         let size = window.inner_size();
 
         let instance_desc = wgpu::InstanceDescriptor {
@@ -83,9 +83,10 @@ impl<'a> State<'a> {
         surface.configure(&device, &config);
 
         let camera_controller = render::camera::CameraController::new();
-        let camera_buffer = build_camera_buffer(&device, &camera_controller.camera);
+        let camera_buffer = build_camera_buffer(&device, game.camera_ref());
 
         return Self {
+            game,
             camera_buffer,
             camera_controller,
             surface,
@@ -158,9 +159,8 @@ impl<'a> State<'a> {
             };
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let world = world::world::World::new();
             let world_render =
-                render::world::WorldRender::new(world, &self.camera_controller.camera);
+                render::world::WorldRender::new(self.game.world_ref(), self.game.camera_ref());
             let instances = world_render.tiles();
 
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
@@ -193,11 +193,13 @@ impl<'a> State<'a> {
     }
 
     pub fn update_camera(&mut self) {
-        self.camera_controller.update();
+        let movement = self.camera_controller.build_movement();
+        let new_coords = self.game.perform_movement(movement);
+
         self.queue.write_buffer(
             &self.camera_buffer,
             0,
-            bytemuck::cast_slice(&[self.camera_controller.camera.to_tuple()]),
+            bytemuck::cast_slice(&[new_coords.to_array()]),
         );
     }
 }

@@ -6,7 +6,6 @@ use winit::{
 use crate::world::camera::Camera;
 
 pub struct CameraController {
-    pub camera: Camera,
     forward: bool,
     backward: bool,
     left: bool,
@@ -17,10 +16,7 @@ impl CameraController {
     const SPEED: u32 = 1;
 
     pub fn new() -> Self {
-        let camera = Camera::new();
-
         Self {
-            camera,
             forward: false,
             backward: false,
             left: false,
@@ -61,24 +57,26 @@ impl CameraController {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn build_movement(&mut self) -> [i32; 2] {
+        let mut movement: [i32; 2] = [0, 0];
         let s = Self::SPEED as i32;
-        let coords = &mut self.camera.coords;
 
         if self.right {
-            coords.move_x(s);
+            movement[0] += s;
         }
 
         if self.left {
-            coords.move_x(-s);
+            movement[0] -= s;
         }
 
         if self.forward {
-            coords.move_y(s);
+            movement[1] += s;
         }
 
         if self.backward {
-            coords.move_y(-s);
+            movement[1] -= s;
         }
+
+        return movement;
     }
 }

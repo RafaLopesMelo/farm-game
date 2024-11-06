@@ -28,4 +28,20 @@ impl Chunk {
     pub fn tiles(&self) -> &[[Tile; CHUNK_SIZE as usize]; CHUNK_SIZE as usize] {
         return &self.tiles;
     }
+
+    pub fn coords(&self) -> &Coords {
+        return &self.coords;
+    }
+
+    pub fn contains(&self, coords: Coords) -> bool {
+        let left = self.coords.x();
+        let right = left + CHUNK_SIZE as i32;
+        let top = self.coords.y();
+        let bottom = top + CHUNK_SIZE as i32;
+
+        let contains_x = coords.x() >= left && coords.x() < right;
+        let contains_y = coords.y() >= top && coords.y() < bottom;
+
+        return contains_x && contains_y;
+    }
 }

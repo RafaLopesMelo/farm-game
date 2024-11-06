@@ -7,12 +7,12 @@ pub struct WorldRender {
 }
 
 impl WorldRender {
-    pub fn new(world: World, camera: &Camera) -> Self {
+    pub fn new(world: &World, camera: &Camera) -> Self {
         let chunks = world
             .chunks()
             .iter()
             .map(|row| {
-                return row.iter().map(move |chunk| {
+                return row.iter().map(|chunk| {
                     return ChunkRender::new(chunk, camera);
                 });
             })

@@ -11,13 +11,15 @@ impl WorldRepository {
         Self {}
     }
 
-    pub fn load_chunks(&self, center: [i32; 2], radius: u32) -> Vec<Vec<Chunk>> {
+    pub fn load_chunks(&self, current: &Chunk, radius: u32) -> Vec<Vec<Chunk>> {
         let r = radius as i32;
 
-        let left = center[0] - r;
-        let right = center[0] + r;
-        let top = center[1] - r;
-        let bottom = center[1] + r;
+        let center = current.coords();
+
+        let left = center.x() - r;
+        let right = center.x() + r;
+        let top = center.y() - r;
+        let bottom = center.y() + r;
 
         let mut chunks = Vec::new();
 
