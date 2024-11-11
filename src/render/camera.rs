@@ -3,8 +3,6 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
 };
 
-use crate::world::camera::Camera;
-
 pub struct CameraController {
     forward: bool,
     backward: bool,

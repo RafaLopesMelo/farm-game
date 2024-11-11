@@ -9,7 +9,7 @@ pub struct WorldRender {
 impl WorldRender {
     pub fn new(world: &World, camera: &Camera) -> Self {
         let chunks = world
-            .chunks()
+            .chunks_vec()
             .iter()
             .map(|row| {
                 return row.iter().map(|chunk| {
