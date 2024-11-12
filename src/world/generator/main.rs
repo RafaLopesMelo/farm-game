@@ -22,6 +22,11 @@ impl WorldGenerator {
             return Tile::new(TileKind::Grass, coords);
         }
 
-        return Tile::new(TileKind::Water, coords);
+        if noise <= 1.0 {
+            return Tile::new(TileKind::Water, coords);
+        }
+
+        println!("noise: {}x{} -> {}", x, y, noise);
+        panic!("Invalid noise value");
     }
 }

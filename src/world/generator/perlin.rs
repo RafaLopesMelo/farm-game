@@ -27,9 +27,9 @@ impl PerlinNoise {
         let x = world_x as f32 * FREQUENCY;
         let y = world_y as f32 * FREQUENCY;
 
-        let x0 = x.floor() as usize;
+        let x0 = x.floor() as i32;
         let x1 = x0 + 1;
-        let y0 = y.floor() as usize;
+        let y0 = y.floor() as i32;
         let y1 = y0 + 1;
 
         let rel_x = x - (x0 as f32);
@@ -38,10 +38,10 @@ impl PerlinNoise {
         let u = Self::fade(rel_x);
         let v = Self::fade(rel_y);
 
-        let tl = self.permute(x0 + self.permute(y0));
-        let tr = self.permute(x1 + self.permute(y0));
-        let bl = self.permute(x0 + self.permute(y1));
-        let br = self.permute(x1 + self.permute(y1));
+        let tl = self.permute(x0, y0);
+        let tr = self.permute(x1, y0);
+        let bl = self.permute(x0, y1);
+        let br = self.permute(x1, y1);
 
         let grad_tl = Self::random_gradient_vector(tl);
         let grad_tr = Self::random_gradient_vector(tr);
@@ -59,16 +59,23 @@ impl PerlinNoise {
         return Self::lerp(v, lerp_top, lerp_bottom);
     }
 
-    fn permute(&self, i: usize) -> usize {
-        return PERMUTATION[i % 256];
+    fn permute(&self, x: i32, y: i32) -> usize {
+        let xi = (x & 255) as usize;
+        let yi = (y & 255) as usize;
+
+        return PERMUTATION[(xi + PERMUTATION[yi]) & 255];
     }
 
     fn random_gradient_vector(hash: usize) -> (f32, f32) {
-        match hash & 3 {
-            0 => (1.0, 1.0),
-            1 => (-1.0, 1.0),
-            2 => (1.0, -1.0),
-            3 => (-1.0, -1.0),
+        match hash & 7 {
+            0 => (1.0, 0.0),
+            1 => (-1.0, 0.0),
+            2 => (0.0, 1.0),
+            3 => (0.0, -1.0),
+            4 => (1.0, 1.0),
+            5 => (-1.0, 1.0),
+            6 => (1.0, -1.0),
+            7 => (-1.0, -1.0),
             _ => (0.0, 0.0),
         }
     }
