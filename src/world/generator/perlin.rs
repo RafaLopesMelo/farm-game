@@ -1,3 +1,5 @@
+use crate::world::coords::Coords;
+
 pub struct PerlinNoise {}
 
 const PERMUTATION: [usize; 256] = [
@@ -23,9 +25,9 @@ impl PerlinNoise {
         return Self {};
     }
 
-    pub fn generate(&self, world_x: i32, world_y: i32) -> f32 {
-        let x = world_x as f32 * FREQUENCY;
-        let y = world_y as f32 * FREQUENCY;
+    pub fn generate(&self, coords: Coords) -> f32 {
+        let x = coords.x() as f32 * FREQUENCY;
+        let y = coords.y() as f32 * FREQUENCY;
 
         let x0 = x.floor() as i32;
         let x1 = x0 + 1;

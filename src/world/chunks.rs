@@ -1,4 +1,4 @@
-use super::{coords::Coords, generator::main::WorldGenerator, tiles::Tile};
+use super::{coords::Coords, tiles::Tile};
 
 /// The size of a chunk in tiles
 pub const CHUNK_SIZE: u32 = 32;
@@ -9,15 +9,7 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn new(coords: Coords) -> Self {
-        let generator = WorldGenerator::new();
-
-        let tiles = std::array::from_fn(|x| {
-            return std::array::from_fn(|y| {
-                return generator.generate(x as i32 + coords.x(), y as i32 + coords.y());
-            });
-        });
-
+    pub fn new(coords: Coords, tiles: [[Tile; CHUNK_SIZE as usize]; CHUNK_SIZE as usize]) -> Self {
         return Self { tiles, coords };
     }
 

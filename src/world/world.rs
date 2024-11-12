@@ -1,27 +1,26 @@
 use std::collections::HashMap;
 
-use crate::repositories::world::WorldRepository;
-
 use super::{
     camera::Camera,
     chunks::{Chunk, CHUNK_SIZE},
     coords::Coords,
+    generator::WorldGenerator,
 };
 
 pub struct World {
     chunks: HashMap<i32, HashMap<i32, Chunk>>,
+    generator: WorldGenerator,
 }
 
 impl World {
     pub fn new() -> Self {
         return Self {
             chunks: HashMap::new(),
+            generator: WorldGenerator::new(),
         };
     }
 
     pub fn load(&mut self, camera: &Camera) {
-        let repository = WorldRepository::new();
-
         let center = self.find_current_chunk_coords(camera);
 
         let cs = CHUNK_SIZE as i32;
@@ -40,7 +39,9 @@ impl World {
                     continue;
                 }
 
-                let chunk = Chunk::new(Coords::new(x * cs, y * cs));
+                let coords = Coords::new(x * cs, y * cs);
+                let chunk = self.generator.generate(coords);
+
                 self.chunks
                     .entry(x)
                     .or_insert(HashMap::new())
