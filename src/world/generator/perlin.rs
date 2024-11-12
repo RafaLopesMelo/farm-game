@@ -60,7 +60,7 @@ impl PerlinNoise {
     }
 
     fn permute(&self, i: usize) -> usize {
-        return PERMUTATION[i & 256];
+        return PERMUTATION[i % 256];
     }
 
     fn random_gradient_vector(hash: usize) -> (f32, f32) {
