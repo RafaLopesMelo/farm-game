@@ -10,7 +10,7 @@ pub struct TileRender {
 }
 
 impl TileRender {
-    pub fn new(tile: &Tile, camera: &Camera) -> Self {
+    pub fn new(tile: &dyn Tile, camera: &Camera) -> Self {
         let coords = &tile.coords();
 
         let s = Self::size() as i32;

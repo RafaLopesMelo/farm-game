@@ -4,21 +4,35 @@ use super::{coords::Coords, tiles::Tile};
 pub const CHUNK_SIZE: u32 = 32;
 
 pub struct Chunk {
-    tiles: [[Tile; CHUNK_SIZE as usize]; CHUNK_SIZE as usize],
+    tiles: [[Box<dyn Tile>; CHUNK_SIZE as usize]; CHUNK_SIZE as usize],
     coords: Coords, // left bottom
 }
 
 impl Chunk {
-    pub fn new(coords: Coords, tiles: [[Tile; CHUNK_SIZE as usize]; CHUNK_SIZE as usize]) -> Self {
+    pub fn new(
+        coords: Coords,
+        tiles: [[Box<dyn Tile>; CHUNK_SIZE as usize]; CHUNK_SIZE as usize],
+    ) -> Self {
         return Self { tiles, coords };
     }
 
-    pub fn tiles(&self) -> &[[Tile; CHUNK_SIZE as usize]; CHUNK_SIZE as usize] {
+    pub fn tiles(&self) -> &[[Box<dyn Tile>; CHUNK_SIZE as usize]; CHUNK_SIZE as usize] {
         return &self.tiles;
     }
 
     pub fn coords(&self) -> &Coords {
         return &self.coords;
+    }
+
+    pub fn tile_at(&self, coords: Coords) -> Option<&dyn Tile> {
+        if !self.contains(coords) {
+            return None;
+        }
+
+        let rel_x = coords.x() - self.coords.x();
+        let rel_y = coords.y() - self.coords.y();
+
+        return Some(self.tiles[rel_x as usize][rel_y as usize].as_ref());
     }
 
     pub fn contains(&self, coords: Coords) -> bool {

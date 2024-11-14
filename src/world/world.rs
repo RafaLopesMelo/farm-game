@@ -21,7 +21,17 @@ impl World {
     }
 
     pub fn load(&mut self, camera: &Camera) {
-        let center = self.find_current_chunk_coords(camera);
+        let cam_coords = camera.coords();
+
+        // @TODO: Handle first render
+        let center = if cam_coords.x() == 0 && cam_coords.y() == 0 {
+            Coords::new(0, 0)
+        } else {
+            self.chunk_at(camera.coords())
+                .expect("camera coords not loaded")
+                .coords()
+                .clone()
+        };
 
         let cs = CHUNK_SIZE as i32;
         let r = 10 * cs; // Radius in tiles
@@ -34,7 +44,7 @@ impl World {
 
         for x in left..right {
             for y in bottom..top {
-                let already_loaded = self.get_chunk(Coords::new(x, y));
+                let already_loaded = self.chunk_at(Coords::new(x * cs, y * cs));
                 if already_loaded.is_some() {
                     continue;
                 }
@@ -50,25 +60,19 @@ impl World {
         }
     }
 
-    pub fn get_chunk(&self, coords: Coords) -> Option<&Chunk> {
-        return self
-            .chunks
-            .get(&coords.x())
-            .and_then(|x| x.get(&coords.y()));
-    }
-
-    fn find_current_chunk_coords(&self, camera: &Camera) -> Coords {
+    pub fn chunk_at(&self, coords: Coords) -> Option<&Chunk> {
         let chunks = self.chunks_vec();
 
+        // TODO -> Optimize
         for row in chunks {
             for chunk in row {
-                if chunk.contains(camera.coords) {
-                    return chunk.coords().clone();
+                if chunk.contains(coords) {
+                    return Some(chunk);
                 }
             }
         }
 
-        return camera.coords().clone();
+        return None;
     }
 
     pub fn chunks_vec(&self) -> Vec<Vec<&Chunk>> {

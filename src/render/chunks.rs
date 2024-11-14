@@ -20,7 +20,7 @@ impl ChunkRender {
             .iter()
             .flat_map(|row| {
                 return row.iter().map(|tile| {
-                    return TileRender::new(tile, camera);
+                    return TileRender::new(tile.as_ref(), camera);
                 });
             })
             .collect::<Vec<TileRender>>()

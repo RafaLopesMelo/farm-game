@@ -3,6 +3,8 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
 };
 
+use crate::world::walk::WalkIntention;
+
 pub struct CameraController {
     forward: bool,
     backward: bool,
@@ -55,7 +57,7 @@ impl CameraController {
         }
     }
 
-    pub fn build_movement(&mut self) -> [i32; 2] {
+    pub fn build_walk_intention(&mut self) -> WalkIntention {
         let mut movement: [i32; 2] = [0, 0];
         let s = Self::SPEED as i32;
 
@@ -75,6 +77,6 @@ impl CameraController {
             movement[1] -= s;
         }
 
-        return movement;
+        return WalkIntention::new(movement[0], movement[1]);
     }
 }

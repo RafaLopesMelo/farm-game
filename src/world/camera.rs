@@ -12,13 +12,16 @@ impl Camera {
         }
     }
 
-    pub fn coords(&self) -> &Coords {
+    pub fn coords_ref(&self) -> &Coords {
         return &self.coords;
     }
 
-    pub fn perform_movement(&mut self, movement: [i32; 2]) -> Coords {
-        self.coords = Coords::new(self.coords.x() + movement[0], self.coords.y() + movement[1]);
+    pub fn coords(&self) -> Coords {
         return self.coords;
+    }
+
+    pub fn move_to(&mut self, coords: Coords) {
+        self.coords = coords;
     }
 
     pub fn to_tuple(&self) -> [i32; 2] {

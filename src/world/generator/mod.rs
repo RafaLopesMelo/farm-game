@@ -3,7 +3,7 @@ pub mod perlin;
 use crate::world::{
     chunks::Chunk,
     coords::Coords,
-    tiles::{Tile, TileKind},
+    tiles::{grass::GrassTile, water::WaterTile, Tile},
 };
 
 use perlin::PerlinNoise;
@@ -28,11 +28,11 @@ impl WorldGenerator {
                 let noise = n.generate(coords);
 
                 if noise < 0.5 {
-                    return Tile::new(TileKind::Grass, coords);
+                    return Box::new(GrassTile::new(coords)) as Box<dyn Tile>;
                 }
 
                 if noise <= 1.0 {
-                    return Tile::new(TileKind::Water, coords);
+                    return Box::new(WaterTile::new(coords)) as Box<dyn Tile>;
                 }
 
                 println!("noise: {}x{} -> {}", coords.x(), coords.y(), noise);

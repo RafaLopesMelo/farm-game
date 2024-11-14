@@ -1,4 +1,4 @@
-use crate::world::{camera::Camera, coords::Coords, world::World};
+use crate::world::{camera::Camera, coords::Coords, walk::WalkIntention, world::World};
 
 pub struct Game {
     camera: Camera,
@@ -24,10 +24,32 @@ impl Game {
     }
 
     /// Moves the camera by the given amount and returns the new coords
-    pub fn perform_movement(&mut self, movement: [i32; 2]) -> Coords {
-        let coords = self.camera.perform_movement(movement);
+    pub fn perform_walk(&mut self, intention: WalkIntention) -> Coords {
+        if intention.is_neutral() {
+            return self.camera.coords();
+        }
+
+        let dest = Coords::new(
+            self.camera.coords.x() + intention.x(),
+            self.camera.coords.y() + intention.y(),
+        );
+
+        let dest_chunk = self
+            .world
+            .chunk_at(dest)
+            .expect("chunk to move is not loaded");
+
+        let dest_tile = dest_chunk
+            .tile_at(dest)
+            .expect("tile to move is not loaded");
+
+        if !dest_tile.walkable() {
+            return dest;
+        }
+
+        self.camera.move_to(dest);
         self.world.load(&self.camera);
 
-        return coords;
+        return dest;
     }
 }

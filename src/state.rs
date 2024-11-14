@@ -193,8 +193,8 @@ impl<'a> State<'a> {
     }
 
     pub fn update_camera(&mut self) {
-        let movement = self.camera_controller.build_movement();
-        let new_coords = self.game.perform_movement(movement);
+        let intention = self.camera_controller.build_walk_intention();
+        let new_coords = self.game.perform_walk(intention);
 
         self.queue.write_buffer(
             &self.camera_buffer,
