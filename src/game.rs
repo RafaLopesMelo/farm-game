@@ -44,7 +44,7 @@ impl Game {
             .expect("tile to move is not loaded");
 
         if !dest_tile.walkable() {
-            return dest;
+            return self.camera.coords;
         }
 
         self.camera.move_to(dest);
