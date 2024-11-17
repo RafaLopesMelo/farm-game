@@ -35,12 +35,12 @@ struct VertexOutput {
 }
 
 fn to_ndc(pixels: i32, physical_size: u32) -> f32 {
-    return f32(pixels) / f32(physical_size) * 2.0 - 1.0;
+    return f32(pixels) / f32(physical_size);
 }
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
-    var camera_pos: f32 = 0.5;
+    var camera_pos: f32 = 0; // Center
     var out: VertexOutput;
 
     let offset = vec2<i32>(in.vertex_pos) + in.instance_offset;

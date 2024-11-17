@@ -36,7 +36,7 @@ impl TileRender {
 
     /// Size of a tile in pixels
     pub fn size() -> u32 {
-        let size: u32 = 16;
+        let size: u32 = 32;
         return size;
     }
 
