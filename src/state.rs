@@ -14,6 +14,8 @@ pub struct State<'a> {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub camera_controller: render::camera::CameraController,
     pub camera_buffer: wgpu::Buffer,
+    grass_bind_group: wgpu::BindGroup,
+    grass_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl<'a> State<'a> {
@@ -85,6 +87,8 @@ impl<'a> State<'a> {
         let camera_controller = render::camera::CameraController::new();
         let camera_buffer = build_camera_buffer(&device, game.camera_ref());
 
+        let (grass_bind_group, grass_bind_group_layout) = build_grass_texture(&device, &queue);
+
         return Self {
             game,
             camera_buffer,
@@ -94,6 +98,8 @@ impl<'a> State<'a> {
             queue,
             config,
             size,
+            grass_bind_group,
+            grass_bind_group_layout,
         };
     }
 
@@ -130,7 +136,11 @@ impl<'a> State<'a> {
         let pipeline = build_pipeline(
             &self.device,
             &self.config,
-            &[&screen_bind_group_layout, &camera_bind_group_layout],
+            &[
+                &screen_bind_group_layout,
+                &camera_bind_group_layout,
+                &self.grass_bind_group_layout,
+            ],
         );
 
         let color_attachment = wgpu::RenderPassColorAttachment {
@@ -182,6 +192,7 @@ impl<'a> State<'a> {
 
             render_pass.set_bind_group(0, &screen_bind_group, &[]);
             render_pass.set_bind_group(1, &camera_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.grass_bind_group, &[]);
 
             render_pass.draw(0..vertices.len() as u32, 0..instances.len() as u32);
         }
@@ -363,4 +374,105 @@ fn build_camera_bind_group(
     let bind_group = device.create_bind_group(&bind_group_desc);
 
     return (bind_group, layout);
+}
+
+fn build_grass_texture(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
+    let buffer = include_bytes!("../assets/grass.jpg");
+    let img = image::load_from_memory(buffer).unwrap();
+    let rgba = img.to_rgba8();
+
+    use image::GenericImageView;
+    let dimensions = img.dimensions();
+
+    let size = wgpu::Extent3d {
+        width: dimensions.0,
+        height: dimensions.1,
+        depth_or_array_layers: 1,
+    };
+
+    let texture_desc = wgpu::TextureDescriptor {
+        size,
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        label: Some("grass_texture"),
+        view_formats: &[],
+    };
+
+    let texture = device.create_texture(&texture_desc);
+
+    queue.write_texture(
+        wgpu::ImageCopyTexture {
+            texture: &texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        &rgba,
+        wgpu::ImageDataLayout {
+            offset: 0,
+            bytes_per_row: Some(4 * dimensions.0), // 4 bytes per pixel
+            rows_per_image: Some(dimensions.1),
+        },
+        size,
+    );
+
+    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+    let sampler_desc = wgpu::SamplerDescriptor {
+        address_mode_u: wgpu::AddressMode::ClampToEdge,
+        address_mode_v: wgpu::AddressMode::ClampToEdge,
+        address_mode_w: wgpu::AddressMode::ClampToEdge,
+        mag_filter: wgpu::FilterMode::Linear,
+        min_filter: wgpu::FilterMode::Nearest,
+        mipmap_filter: wgpu::FilterMode::Nearest,
+        ..Default::default()
+    };
+    let sampler = device.create_sampler(&sampler_desc);
+
+    let bind_group_layout_desc = wgpu::BindGroupLayoutDescriptor {
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    multisampled: false,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+        ],
+        label: Some("grass_bind_group_layout"),
+    };
+    let bind_group_layout = device.create_bind_group_layout(&bind_group_layout_desc);
+
+    let bind_group_desc = wgpu::BindGroupDescriptor {
+        layout: &bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(&sampler),
+            },
+        ],
+        label: Some("grass_bind_group"),
+    };
+
+    let bind_group = device.create_bind_group(&bind_group_desc);
+    return (bind_group, bind_group_layout);
 }
