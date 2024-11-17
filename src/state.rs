@@ -14,8 +14,8 @@ pub struct State<'a> {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub camera_controller: render::camera::CameraController,
     pub camera_buffer: wgpu::Buffer,
-    grass_bind_group: wgpu::BindGroup,
-    grass_bind_group_layout: wgpu::BindGroupLayout,
+    texture_bind_group: wgpu::BindGroup,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl<'a> State<'a> {
@@ -87,7 +87,7 @@ impl<'a> State<'a> {
         let camera_controller = render::camera::CameraController::new();
         let camera_buffer = build_camera_buffer(&device, game.camera_ref());
 
-        let (grass_bind_group, grass_bind_group_layout) = build_grass_texture(&device, &queue);
+        let (texture_bind_group, texture_bind_group_layout) = build_texture(&device, &queue);
 
         return Self {
             game,
@@ -98,8 +98,8 @@ impl<'a> State<'a> {
             queue,
             config,
             size,
-            grass_bind_group,
-            grass_bind_group_layout,
+            texture_bind_group,
+            texture_bind_group_layout,
         };
     }
 
@@ -139,7 +139,7 @@ impl<'a> State<'a> {
             &[
                 &screen_bind_group_layout,
                 &camera_bind_group_layout,
-                &self.grass_bind_group_layout,
+                &self.texture_bind_group_layout,
             ],
         );
 
@@ -192,7 +192,7 @@ impl<'a> State<'a> {
 
             render_pass.set_bind_group(0, &screen_bind_group, &[]);
             render_pass.set_bind_group(1, &camera_bind_group, &[]);
-            render_pass.set_bind_group(2, &self.grass_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.texture_bind_group, &[]);
 
             render_pass.draw(0..vertices.len() as u32, 0..instances.len() as u32);
         }
@@ -376,11 +376,11 @@ fn build_camera_bind_group(
     return (bind_group, layout);
 }
 
-fn build_grass_texture(
+fn build_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
 ) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
-    let buffer = include_bytes!("../assets/grass.jpg");
+    let buffer = include_bytes!("../assets/atlas.png");
     let img = image::load_from_memory(buffer).unwrap();
     let rgba = img.to_rgba8();
 
