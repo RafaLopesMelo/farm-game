@@ -1,6 +1,6 @@
 struct VertexInput {
     @location(0) vertex_pos: vec2<u32>,
-    @location(1) vertex_uv: vec2<f32>,
+    @location(1) vertex_texture_uv: vec2<f32>,
     @location(2) instance_coords: vec2<i32>,
     @location(3) instance_offset: vec2<i32>,
     @location(4) kind: u32,
@@ -54,8 +54,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.instance_coords = in.instance_coords;
     out.kind = in.kind;
 
-    let texture_x = mix(in.texture_uv_min.x, in.texture_uv_max.x, in.vertex_uv.x);
-    let texture_y = mix(in.texture_uv_min.y, in.texture_uv_max.y, in.vertex_uv.y);
+    let texture_x = mix(in.texture_uv_min.x, in.texture_uv_max.x, in.vertex_texture_uv.x);
+    let texture_y = mix(in.texture_uv_min.y, in.texture_uv_max.y, in.vertex_texture_uv.y);
     out.texture_coords = vec2<f32>(texture_x, texture_y);
 
     return out;

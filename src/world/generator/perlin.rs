@@ -18,16 +18,14 @@ const PERMUTATION: [usize; 256] = [
     128, 195, 78, 66, 215, 61, 156, 180,
 ];
 
-const FREQUENCY: f32 = 0.05;
-
 impl PerlinNoise {
     pub fn new() -> Self {
         return Self {};
     }
 
-    pub fn generate(&self, coords: Coords) -> f32 {
-        let x = coords.x() as f32 * FREQUENCY;
-        let y = coords.y() as f32 * FREQUENCY;
+    pub fn generate(&self, coords: Coords, frequency: f32) -> f32 {
+        let x = coords.x() as f32 * frequency;
+        let y = coords.y() as f32 * frequency;
 
         let x0 = x.floor() as i32;
         let x1 = x0 + 1;
