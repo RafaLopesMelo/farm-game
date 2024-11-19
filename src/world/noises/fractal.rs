@@ -1,4 +1,4 @@
-use crate::world::coords::Coords;
+use crate::world::coords::Coords2D;
 
 use super::perlin::PerlinNoise;
 
@@ -13,18 +13,25 @@ impl FractalNoise {
         };
     }
 
-    pub fn generate(&self, coords: Coords, octaves: u8, persistence: f32, lacunarity: f32) -> f32 {
+    pub fn generate(
+        &self,
+        coords: Coords2D,
+        octaves: u8,
+        persistence: f32,
+        lacunarity: f32,
+        frequency: f32,
+    ) -> f32 {
         let mut noise = 0.0;
         let mut amplitude = 1.0;
-        let mut frequency = 0.005;
         let mut max_value = 0.0;
+        let mut tmp_frequency = frequency;
 
         for _ in 0..octaves {
-            noise += self.noise.generate(coords, frequency) * amplitude;
+            noise += self.noise.generate(coords, tmp_frequency) * amplitude;
             max_value += amplitude;
 
             amplitude *= persistence; // Decrease amplitude
-            frequency *= lacunarity; // Increase frequency
+            tmp_frequency *= lacunarity; // Increase frequency
         }
 
         return noise / max_value;

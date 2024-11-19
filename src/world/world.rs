@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::{
     camera::Camera,
     chunks::{Chunk, CHUNK_SIZE},
-    coords::Coords,
+    coords::Coords2D,
     generator::WorldGenerator,
 };
 
@@ -25,7 +25,7 @@ impl World {
 
         // @TODO: Handle first render
         let center = if cam_coords.x() == 0 && cam_coords.y() == 0 {
-            Coords::new(0, 0)
+            Coords2D::new(0, 0)
         } else {
             self.chunk_at(camera.coords())
                 .expect("camera coords not loaded")
@@ -44,12 +44,12 @@ impl World {
 
         for x in left..right {
             for y in bottom..top {
-                let already_loaded = self.chunk_at(Coords::new(x * cs, y * cs));
+                let already_loaded = self.chunk_at(Coords2D::new(x * cs, y * cs));
                 if already_loaded.is_some() {
                     continue;
                 }
 
-                let coords = Coords::new(x * cs, y * cs);
+                let coords = Coords2D::new(x * cs, y * cs);
                 let chunk = self.generator.generate(coords);
 
                 self.chunks
@@ -60,7 +60,7 @@ impl World {
         }
     }
 
-    pub fn chunk_at(&self, coords: Coords) -> Option<&Chunk> {
+    pub fn chunk_at(&self, coords: Coords2D) -> Option<&Chunk> {
         let chunks = self.chunks_vec();
 
         // TODO -> Optimize

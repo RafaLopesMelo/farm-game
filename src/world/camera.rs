@@ -1,26 +1,26 @@
-use super::coords::Coords;
+use super::coords::Coords2D;
 
 #[derive(Copy, Clone)]
 pub struct Camera {
-    pub coords: Coords,
+    pub coords: Coords2D,
 }
 
 impl Camera {
     pub fn new() -> Self {
         Self {
-            coords: Coords::new(0, 0),
+            coords: Coords2D::new(0, 0),
         }
     }
 
-    pub fn coords_ref(&self) -> &Coords {
+    pub fn coords_ref(&self) -> &Coords2D {
         return &self.coords;
     }
 
-    pub fn coords(&self) -> Coords {
+    pub fn coords(&self) -> Coords2D {
         return self.coords;
     }
 
-    pub fn move_to(&mut self, coords: Coords) {
+    pub fn move_to(&mut self, coords: Coords2D) {
         self.coords = coords;
     }
 

@@ -1,4 +1,4 @@
-use crate::world::coords::Coords;
+use crate::world::coords::Coords2D;
 
 pub struct PerlinNoise {}
 
@@ -23,7 +23,7 @@ impl PerlinNoise {
         return Self {};
     }
 
-    pub fn generate(&self, coords: Coords, frequency: f32) -> f32 {
+    pub fn generate(&self, coords: Coords2D, frequency: f32) -> f32 {
         let x = coords.x() as f32 * frequency;
         let y = coords.y() as f32 * frequency;
 

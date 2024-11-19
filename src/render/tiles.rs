@@ -2,7 +2,10 @@ use super::{
     texture::{TextureAtlas, TextureCoords},
     vertex::Vertex,
 };
-use crate::world::{camera::Camera, tiles::Tile};
+use crate::world::{
+    camera::Camera,
+    tiles::{Tile, TILE_MAX_HEIGHT},
+};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -10,6 +13,7 @@ pub struct TileRender {
     coords: [i32; 2],
     offset: [i32; 2],
     kind: u32,
+    height: f32,
     uv: TextureCoords,
 }
 
@@ -30,13 +34,14 @@ impl TileRender {
             coords: [coords.x(), coords.y()],
             offset,
             kind: tile.kind() as u32,
+            height: tile.height() as f32 / TILE_MAX_HEIGHT as f32,
             uv,
         };
     }
 
     /// Size of a tile in pixels
     pub fn size() -> u32 {
-        let size: u32 = 32;
+        let size: u32 = 8;
         return size;
     }
 
@@ -94,7 +99,7 @@ impl TileRender {
                     offset: std::mem::size_of::<[i32; 4]>() as wgpu::BufferAddress,
                 },
                 wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Float32x2,
+                    format: wgpu::VertexFormat::Float32,
                     shader_location: 5,
                     offset: (std::mem::size_of::<[i32; 4]>() + std::mem::size_of::<u32>())
                         as wgpu::BufferAddress,
@@ -104,6 +109,15 @@ impl TileRender {
                     shader_location: 6,
                     offset: (std::mem::size_of::<[i32; 4]>()
                         + std::mem::size_of::<u32>()
+                        + std::mem::size_of::<f32>())
+                        as wgpu::BufferAddress,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    shader_location: 7,
+                    offset: (std::mem::size_of::<[i32; 4]>()
+                        + std::mem::size_of::<u32>()
+                        + std::mem::size_of::<f32>()
                         + std::mem::size_of::<[f32; 2]>())
                         as wgpu::BufferAddress,
                 },

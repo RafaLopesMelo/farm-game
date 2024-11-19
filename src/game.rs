@@ -1,4 +1,4 @@
-use crate::world::{camera::Camera, coords::Coords, walk::WalkIntention, world::World};
+use crate::world::{camera::Camera, coords::Coords2D, walk::WalkIntention, world::World};
 
 pub struct Game {
     camera: Camera,
@@ -24,12 +24,12 @@ impl Game {
     }
 
     /// Moves the camera by the given amount and returns the new coords
-    pub fn perform_walk(&mut self, intention: WalkIntention) -> Coords {
+    pub fn perform_walk(&mut self, intention: WalkIntention) -> Coords2D {
         if intention.is_neutral() {
             return self.camera.coords();
         }
 
-        let dest = Coords::new(
+        let dest = Coords2D::new(
             self.camera.coords.x() + intention.x(),
             self.camera.coords.y() + intention.y(),
         );

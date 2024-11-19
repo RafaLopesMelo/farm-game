@@ -4,8 +4,9 @@ struct VertexInput {
     @location(2) instance_coords: vec2<i32>,
     @location(3) instance_offset: vec2<i32>,
     @location(4) kind: u32,
-    @location(5) texture_uv_min: vec2<f32>,
-    @location(6) texture_uv_max: vec2<f32>,
+    @location(5) height: f32,
+    @location(6) texture_uv_min: vec2<f32>,
+    @location(7) texture_uv_max: vec2<f32>,
 }
 
 struct Screen {
@@ -30,8 +31,9 @@ var s_diffuse: sampler;
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) kind: u32,
-    @location(1) instance_coords: vec2<i32>,
-    @location(2) texture_coords: vec2<f32>,
+    @location(1) height: f32,
+    @location(2) instance_coords: vec2<i32>,
+    @location(3) texture_coords: vec2<f32>,
 }
 
 fn to_ndc(pixels: i32, physical_size: u32) -> f32 {
@@ -53,6 +55,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
     out.instance_coords = in.instance_coords;
     out.kind = in.kind;
+    out.height = in.height;
 
     let texture_x = mix(in.texture_uv_min.x, in.texture_uv_max.x, in.vertex_texture_uv.x);
     let texture_y = mix(in.texture_uv_min.y, in.texture_uv_max.y, in.vertex_texture_uv.y);
@@ -71,6 +74,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         let USER_COLOR = vec4<f32>(0.74, 0.21, 0.33, 1.0);
         return USER_COLOR;
     } else {
-        return textureSample(t_diffuse, s_diffuse, in.texture_coords);
+        let color = textureSample(t_diffuse, s_diffuse, in.texture_coords);
+        let brightness_factor = 1.0 - in.height * 20;
+        return color * brightness_factor;
     }
 }
