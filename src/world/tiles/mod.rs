@@ -1,3 +1,4 @@
+pub mod dirt;
 pub mod grass;
 pub mod water;
 
@@ -5,8 +6,9 @@ use super::coords::Coords2D;
 
 #[derive(Copy, Clone)]
 pub enum TileKind {
-    Grass = 0,
-    Water = 1,
+    Dirt = 0,
+    Grass = 1,
+    Water = 2,
 }
 
 pub const TILE_MAX_HEIGHT: i32 = 255;

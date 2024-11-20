@@ -25,11 +25,12 @@ pub struct TextureAtlas {}
 
 impl TextureAtlas {
     const ATLAS_ROWS: f32 = 1.0;
-    const ATLAS_COLUMNS: f32 = 2.0;
+    const ATLAS_COLUMNS: f32 = 3.0;
 
-    const TILE_TEXTURE: [[f32; 2]; 2] = [
-        [0.0, 0.0], // Grass
-        [1.0, 0.0], // Water
+    const TILE_TEXTURE: [[f32; 2]; 3] = [
+        [0.0, 0.0], // Dirt
+        [1.0, 0.0], // Grass
+        [2.0, 0.0], // Water
     ];
 
     pub fn new() -> Self {

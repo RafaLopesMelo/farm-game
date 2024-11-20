@@ -1,7 +1,7 @@
 use crate::world::{
     coords::Coords2D,
     noises::fractal::{FractalNoise, FractalNoiseGenerationDescriptor},
-    tiles::{grass::GrassTile, water::WaterTile, Tile},
+    tiles::{dirt::DirtTile, grass::GrassTile, water::WaterTile, Tile},
 };
 
 pub struct PlainsBiome {
@@ -28,6 +28,10 @@ impl PlainsBiome {
 
         if noise <= -0.4 {
             return Box::new(WaterTile::new(coords, height)) as Box<dyn Tile>;
+        }
+
+        if noise > 0.1 && noise <= 0.16 {
+            return Box::new(DirtTile::new(coords, height)) as Box<dyn Tile>;
         }
 
         if noise <= 1.0 {
