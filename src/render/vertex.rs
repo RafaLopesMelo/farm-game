@@ -14,12 +14,8 @@ impl Vertex {
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
-                    // Each vertex is made up of two u32, representing a 2D position
                     format: wgpu::VertexFormat::Uint32x2,
-                    // Where to find the vertex in the buffer when configuring shader file
                     shader_location: 0,
-                    // How many bytes need to be skipped to get this attribute. Because I have only one
-                    // attribute, this is always 0.
                     offset: 0,
                 },
                 wgpu::VertexAttribute {

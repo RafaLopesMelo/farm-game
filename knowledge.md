@@ -41,3 +41,10 @@ To load textures on the GPU is commonly used an `Atlas Texture`, which is a text
 
 ## References
 https://www.reddit.com/r/rust_gamedev/comments/176ur9k/is_it_goodpractice_to_create_multiple_render/
+
+## To Study
+
+### Tile Texture
+
+- https://www.youtube.com/watch?v=jEWFSv3ivTg
+    - Dual grid system

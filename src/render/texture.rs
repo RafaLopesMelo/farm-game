@@ -2,22 +2,14 @@ use crate::world::tiles::Tile;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct TextureCoords {
+pub struct Texture {
     uv_min: [f32; 2],
     uv_max: [f32; 2],
 }
 
-impl TextureCoords {
+impl Texture {
     pub fn new(uv_min: [f32; 2], uv_max: [f32; 2]) -> Self {
         return Self { uv_min, uv_max };
-    }
-
-    pub fn uv_min(&self) -> [f32; 2] {
-        return [self.uv_min[0], self.uv_min[1]];
-    }
-
-    pub fn uv_max(&self) -> [f32; 2] {
-        return [self.uv_max[0], self.uv_max[1]];
     }
 }
 
@@ -37,11 +29,11 @@ impl TextureAtlas {
         return Self {};
     }
 
-    pub fn coords_for_tile(&self, tile: &dyn Tile) -> TextureCoords {
+    pub fn texture_for_tile(&self, tile: &dyn Tile) -> Texture {
         let kind = tile.kind() as usize;
         let texture = Self::TILE_TEXTURE[kind];
 
-        return TextureCoords::new(
+        return Texture::new(
             [
                 texture[0] / Self::ATLAS_COLUMNS,
                 texture[1] / Self::ATLAS_ROWS,

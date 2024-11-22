@@ -1,5 +1,5 @@
 use super::{
-    texture::{TextureAtlas, TextureCoords},
+    texture::{Texture, TextureAtlas},
     vertex::Vertex,
 };
 use crate::world::{
@@ -14,7 +14,7 @@ pub struct TileRender {
     offset: [i32; 2],
     kind: u32,
     height: f32,
-    uv: TextureCoords,
+    texture: Texture,
 }
 
 impl TileRender {
@@ -28,20 +28,20 @@ impl TileRender {
 
         let offset: [i32; 2] = [diff[0] * s, diff[1] * s];
 
-        let uv = atlas.coords_for_tile(tile);
+        let texture = atlas.texture_for_tile(tile);
 
         return Self {
             coords: [coords.x(), coords.y()],
             offset,
             kind: tile.kind() as u32,
             height: tile.height() as f32 / TILE_MAX_HEIGHT as f32,
-            uv,
+            texture,
         };
     }
 
     /// Size of a tile in pixels
     pub fn size() -> u32 {
-        let size: u32 = 8;
+        let size: u32 = 32;
         return size;
     }
 

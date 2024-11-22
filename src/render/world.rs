@@ -1,34 +1,35 @@
 use crate::world::{camera::Camera, world::World};
 
-use super::{chunks::ChunkRender, tiles::TileRender};
+use super::tiles::TileRender;
 
 pub struct WorldRender {
-    chunks: Vec<ChunkRender>,
+    tiles: Vec<TileRender>,
 }
 
 impl WorldRender {
     pub fn new(world: &World, camera: &Camera) -> Self {
-        let chunks = world
+        let tiles = world
             .chunks_vec()
             .iter()
-            .map(|row| {
-                return row.iter().map(|chunk| {
-                    return ChunkRender::new(chunk, camera);
+            .flat_map(|row| {
+                return row.iter().flat_map(|chunk| {
+                    return chunk
+                        .tiles()
+                        .iter()
+                        .flat_map(|row| {
+                            return row.iter().map(|tile| {
+                                return TileRender::new(tile.as_ref(), camera);
+                            });
+                        })
+                        .collect::<Vec<TileRender>>();
                 });
             })
-            .flatten()
-            .collect::<Vec<ChunkRender>>();
+            .collect::<Vec<TileRender>>();
 
-        return WorldRender { chunks };
+        return WorldRender { tiles };
     }
 
     pub fn tiles(&self) -> Vec<TileRender> {
-        let tiles = self
-            .chunks
-            .iter()
-            .flat_map(|chunk| chunk.tiles())
-            .collect::<Vec<TileRender>>();
-
-        return tiles;
+        return self.tiles.clone();
     }
 }

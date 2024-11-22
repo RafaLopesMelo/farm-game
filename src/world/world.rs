@@ -5,6 +5,7 @@ use super::{
     chunks::{Chunk, CHUNK_SIZE},
     coords::Coords2D,
     generator::WorldGenerator,
+    tiles::Tile,
 };
 
 pub struct World {
@@ -73,6 +74,25 @@ impl World {
         }
 
         return None;
+    }
+
+    pub fn neighbors_of(&self, coords: Coords2D) -> [&dyn Tile; 4] {
+        let tc = Coords2D::new(coords.x(), coords.y() + 1);
+        let bc = Coords2D::new(coords.x(), coords.y() - 1);
+        let rc = Coords2D::new(coords.x() + 1, coords.y());
+        let lc = Coords2D::new(coords.x() - 1, coords.y());
+
+        let t_chunk = self.chunk_at(tc);
+        let b_chunk = self.chunk_at(bc);
+        let r_chunk = self.chunk_at(rc);
+        let l_chunk = self.chunk_at(lc);
+
+        let t = t_chunk.and_then(|c| c.tile_at(coords));
+        let b = b_chunk.and_then(|c| c.tile_at(coords));
+        let r = r_chunk.and_then(|c| c.tile_at(coords));
+        let l = l_chunk.and_then(|c| c.tile_at(coords));
+
+        return [t.unwrap(), b.unwrap(), r.unwrap(), l.unwrap()];
     }
 
     pub fn chunks_vec(&self) -> Vec<Vec<&Chunk>> {

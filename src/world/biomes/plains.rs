@@ -30,7 +30,7 @@ impl PlainsBiome {
             return Box::new(WaterTile::new(coords, height)) as Box<dyn Tile>;
         }
 
-        if noise > 0.1 && noise <= 0.16 {
+        if noise > 0.1 && noise <= 0.15 || noise > -0.15 && noise <= -0.1 {
             return Box::new(DirtTile::new(coords, height)) as Box<dyn Tile>;
         }
 
