@@ -1,10 +1,9 @@
-use crate::world::coords::Coords2D;
+use crate::world::coords::Coords3D;
 
 use super::{Tile, TileKind};
 
 pub struct DirtTile {
-    coords: Coords2D,
-    height: i32,
+    coords: Coords3D,
 }
 
 impl Tile for DirtTile {
@@ -12,21 +11,17 @@ impl Tile for DirtTile {
         return TileKind::Dirt;
     }
 
-    fn coords(&self) -> Coords2D {
+    fn coords(&self) -> Coords3D {
         return self.coords;
     }
 
     fn walkable(&self) -> bool {
         return true;
     }
-
-    fn height(&self) -> i32 {
-        return self.height;
-    }
 }
 
 impl DirtTile {
-    pub fn new(coords: Coords2D, height: i32) -> Self {
-        return Self { coords, height };
+    pub fn new(coords: Coords3D) -> Self {
+        return Self { coords };
     }
 }

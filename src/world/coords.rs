@@ -58,4 +58,8 @@ impl Coords3D {
     pub fn to_array(&self) -> [i32; 3] {
         return self.coords;
     }
+
+    pub fn to_2d(&self) -> Coords2D {
+        return Coords2D::new(self.x(), self.y());
+    }
 }

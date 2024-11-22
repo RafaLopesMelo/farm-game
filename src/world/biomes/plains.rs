@@ -1,5 +1,5 @@
 use crate::world::{
-    coords::Coords2D,
+    coords::{Coords2D, Coords3D},
     noises::fractal::{FractalNoise, FractalNoiseGenerationDescriptor},
     tiles::{dirt::DirtTile, grass::GrassTile, water::WaterTile, Tile},
 };
@@ -26,16 +26,18 @@ impl PlainsBiome {
         let noise = self.fractal.generate(coords, &desc);
         let height = self.height(coords);
 
+        let c = Coords3D::new(coords.x(), coords.y(), height);
+
         if noise <= -0.4 {
-            return Box::new(WaterTile::new(coords, height)) as Box<dyn Tile>;
+            return Box::new(WaterTile::new(c)) as Box<dyn Tile>;
         }
 
         if noise > 0.1 && noise <= 0.15 || noise > -0.15 && noise <= -0.1 {
-            return Box::new(DirtTile::new(coords, height)) as Box<dyn Tile>;
+            return Box::new(DirtTile::new(c)) as Box<dyn Tile>;
         }
 
         if noise <= 1.0 {
-            return Box::new(GrassTile::new(coords, height)) as Box<dyn Tile>;
+            return Box::new(GrassTile::new(c)) as Box<dyn Tile>;
         }
 
         println!("noise: {}x{} -> {}", coords.x(), coords.y(), noise);

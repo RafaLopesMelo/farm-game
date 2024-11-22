@@ -1,12 +1,11 @@
 struct VertexInput {
     @location(0) vertex_pos: vec2<u32>,
     @location(1) vertex_texture_uv: vec2<f32>,
-    @location(2) instance_coords: vec2<i32>,
+    @location(2) instance_coords: vec3<i32>,
     @location(3) instance_offset: vec2<i32>,
     @location(4) kind: u32,
-    @location(5) height: f32,
-    @location(6) texture_uv_min: vec2<f32>,
-    @location(7) texture_uv_max: vec2<f32>,
+    @location(5) texture_uv_min: vec2<f32>,
+    @location(6) texture_uv_max: vec2<f32>,
 }
 
 struct Screen {
@@ -31,8 +30,7 @@ var s_diffuse: sampler;
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) kind: u32,
-    @location(1) height: f32,
-    @location(2) instance_coords: vec2<i32>,
+    @location(2) instance_coords: vec3<i32>,
     @location(3) texture_coords: vec2<f32>,
 }
 
@@ -55,7 +53,6 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
     out.instance_coords = in.instance_coords;
     out.kind = in.kind;
-    out.height = in.height;
 
     let texture_x = mix(in.texture_uv_min.x, in.texture_uv_max.x, in.vertex_texture_uv.x);
     let texture_y = mix(in.texture_uv_min.y, in.texture_uv_max.y, in.vertex_texture_uv.y);
@@ -66,6 +63,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    var MAX_HEIGHT = 255.0;
+
     let is_camera_x = camera.coords.x == in.instance_coords.x;
     let is_camera_y = camera.coords.y == in.instance_coords.y;
     let is_camera = is_camera_x && is_camera_y;
@@ -75,7 +74,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         return USER_COLOR;
     } else {
         let color = textureSample(t_diffuse, s_diffuse, in.texture_coords);
-        let brightness_factor = 1.0 - in.height * 20;
+        let brightness_factor = 1.0 - f32(in.instance_coords.z) / MAX_HEIGHT * 20;
         return color * brightness_factor;
     }
 }
