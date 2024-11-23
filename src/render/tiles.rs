@@ -7,7 +7,7 @@ use crate::world::{camera::Camera, tiles::Tile};
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TileRender {
-    coords: [i32; 3],
+    coords: [f32; 3],
     offset: [i32; 2],
     kind: u32,
     texture: Texture,
@@ -22,7 +22,7 @@ impl TileRender {
         let s = Self::size() as i32;
         let diff = camera.coords.offset(&coords.to_2d());
 
-        let offset: [i32; 2] = [diff[0] * s, diff[1] * s];
+        let offset: [i32; 2] = [diff[0].floor() as i32 * s, diff[1].floor() as i32 * s];
 
         let texture = atlas.texture_for_tile(tile);
 
@@ -36,7 +36,7 @@ impl TileRender {
 
     /// Size of a tile in pixels
     pub fn size() -> u32 {
-        let size: u32 = 32;
+        let size: u32 = 16;
         return size;
     }
 
@@ -79,30 +79,34 @@ impl TileRender {
             step_mode: wgpu::VertexStepMode::Instance,
             attributes: &[
                 wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Sint32x3,
+                    format: wgpu::VertexFormat::Float32x3,
                     shader_location: 2,
                     offset: 0,
                 },
                 wgpu::VertexAttribute {
                     format: wgpu::VertexFormat::Sint32x2,
                     shader_location: 3,
-                    offset: std::mem::size_of::<[i32; 3]>() as wgpu::BufferAddress,
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                 },
                 wgpu::VertexAttribute {
                     format: wgpu::VertexFormat::Uint32,
                     shader_location: 4,
-                    offset: std::mem::size_of::<[i32; 5]>() as wgpu::BufferAddress,
+                    offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<[i32; 2]>())
+                        as wgpu::BufferAddress,
                 },
                 wgpu::VertexAttribute {
                     format: wgpu::VertexFormat::Float32x2,
                     shader_location: 5,
-                    offset: (std::mem::size_of::<[i32; 5]>() + std::mem::size_of::<u32>())
+                    offset: (std::mem::size_of::<[f32; 3]>()
+                        + std::mem::size_of::<[i32; 2]>()
+                        + std::mem::size_of::<u32>())
                         as wgpu::BufferAddress,
                 },
                 wgpu::VertexAttribute {
                     format: wgpu::VertexFormat::Float32x2,
                     shader_location: 6,
-                    offset: (std::mem::size_of::<[i32; 5]>()
+                    offset: (std::mem::size_of::<[f32; 3]>()
+                        + std::mem::size_of::<[i32; 2]>()
                         + std::mem::size_of::<u32>()
                         + std::mem::size_of::<[f32; 2]>())
                         as wgpu::BufferAddress,

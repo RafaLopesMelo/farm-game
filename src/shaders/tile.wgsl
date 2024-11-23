@@ -1,7 +1,7 @@
 struct VertexInput {
     @location(0) vertex_pos: vec2<u32>,
     @location(1) vertex_texture_uv: vec2<f32>,
-    @location(2) instance_coords: vec3<i32>,
+    @location(2) instance_coords: vec3<f32>,
     @location(3) instance_offset: vec2<i32>,
     @location(4) kind: u32,
     @location(5) texture_uv_min: vec2<f32>,
@@ -16,7 +16,7 @@ struct Screen {
 var<uniform> screen: Screen;
 
 struct Camera {
-    coords: vec2<i32>,
+    coords: vec2<f32>,
 }
 
 @group(1) @binding(0)
@@ -30,7 +30,7 @@ var s_diffuse: sampler;
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) kind: u32,
-    @location(2) instance_coords: vec3<i32>,
+    @location(2) instance_coords: vec3<f32>,
     @location(3) texture_coords: vec2<f32>,
 }
 

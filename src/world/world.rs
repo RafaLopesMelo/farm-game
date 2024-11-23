@@ -25,8 +25,8 @@ impl World {
         let cam_coords = camera.coords();
 
         // @TODO: Handle first render
-        let center = if cam_coords.x() == 0 && cam_coords.y() == 0 {
-            Coords2D::new(0, 0)
+        let center = if cam_coords.x() == 0.0 && cam_coords.y() == 0.0 {
+            Coords2D::new(0.0, 0.0)
         } else {
             self.chunk_at(camera.coords())
                 .expect("camera coords not loaded")
@@ -35,22 +35,22 @@ impl World {
         };
 
         let cs = CHUNK_SIZE as i32;
-        let r = 10 * cs; // Radius in tiles
+        let r = 5 * cs; // Radius in tiles
 
         // offsets in chunks quantity
-        let left = (center.x() - r) / cs;
-        let right = (center.x() + r) / cs;
-        let bottom = (center.y() - r) / cs;
-        let top = (center.y() + r) / cs;
+        let left = (center.x().floor() as i32 - r) / cs;
+        let right = (center.x().floor() as i32 + r) / cs;
+        let bottom = (center.y().floor() as i32 - r) / cs;
+        let top = (center.y().floor() as i32 + r) / cs;
 
         for x in left..right {
             for y in bottom..top {
-                let already_loaded = self.chunk_at(Coords2D::new(x * cs, y * cs));
+                let already_loaded = self.chunk_at(Coords2D::new_lattice(x * cs, y * cs));
                 if already_loaded.is_some() {
                     continue;
                 }
 
-                let coords = Coords2D::new(x * cs, y * cs);
+                let coords = Coords2D::new_lattice(x * cs, y * cs);
                 let chunk = self.generator.generate(coords);
 
                 self.chunks
@@ -77,10 +77,13 @@ impl World {
     }
 
     pub fn neighbors_of(&self, coords: Coords2D) -> [&dyn Tile; 4] {
-        let tc = Coords2D::new(coords.x(), coords.y() + 1);
-        let bc = Coords2D::new(coords.x(), coords.y() - 1);
-        let rc = Coords2D::new(coords.x() + 1, coords.y());
-        let lc = Coords2D::new(coords.x() - 1, coords.y());
+        let x = coords.lattice_x();
+        let y = coords.lattice_y();
+
+        let tc = Coords2D::new_lattice(x, y + 1);
+        let bc = Coords2D::new_lattice(x, y - 1);
+        let rc = Coords2D::new_lattice(x + 1, y);
+        let lc = Coords2D::new_lattice(x - 1, y);
 
         let t_chunk = self.chunk_at(tc);
         let b_chunk = self.chunk_at(bc);

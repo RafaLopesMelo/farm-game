@@ -332,7 +332,7 @@ fn build_screen_bind_group(
 }
 
 fn build_camera_buffer(device: &wgpu::Device, camera: &Camera) -> wgpu::Buffer {
-    let content = &camera.to_tuple();
+    let content = &camera.to_array();
 
     let buffer_desc = wgpu::util::BufferInitDescriptor {
         label: Some("camera_buffer"),

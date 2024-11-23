@@ -26,7 +26,7 @@ impl PlainsBiome {
         let noise = self.fractal.generate(coords, &desc);
         let height = self.height(coords);
 
-        let c = Coords3D::new(coords.x(), coords.y(), height);
+        let c = Coords3D::new_lattice(coords.lattice_x(), coords.lattice_y(), height);
 
         if noise <= -0.4 {
             return Box::new(WaterTile::new(c)) as Box<dyn Tile>;

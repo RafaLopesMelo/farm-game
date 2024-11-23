@@ -13,7 +13,7 @@ pub struct CameraController {
 }
 
 impl CameraController {
-    const SPEED: u32 = 1;
+    const SPEED: f32 = 1.0;
 
     pub fn new() -> Self {
         Self {
@@ -58,8 +58,8 @@ impl CameraController {
     }
 
     pub fn build_walk_intention(&mut self) -> WalkIntention {
-        let mut movement: [i32; 2] = [0, 0];
-        let s = Self::SPEED as i32;
+        let mut movement: [f32; 2] = [0.0, 0.0];
+        let s = Self::SPEED;
 
         if self.right {
             movement[0] += s;

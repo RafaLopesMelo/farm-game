@@ -8,7 +8,7 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Self {
-            coords: Coords2D::new(0, 0),
+            coords: Coords2D::new_lattice(0, 0),
         }
     }
 
@@ -24,7 +24,7 @@ impl Camera {
         self.coords = coords;
     }
 
-    pub fn to_tuple(&self) -> [i32; 2] {
+    pub fn to_array(&self) -> [f32; 2] {
         return [self.coords.x(), self.coords.y()];
     }
 }

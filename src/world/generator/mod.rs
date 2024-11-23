@@ -10,14 +10,14 @@ impl WorldGenerator {
     }
 
     pub fn generate(&self, chunk_coords: Coords2D) -> Chunk {
-        let cx = chunk_coords.x();
-        let cy = chunk_coords.y();
+        let cx = chunk_coords.lattice_x();
+        let cy = chunk_coords.lattice_y();
 
         let biome = PlainsBiome::new();
 
         let tiles = std::array::from_fn(|rel_x| {
             return std::array::from_fn(|rel_y| {
-                let coords = Coords2D::new(rel_x as i32 + cx, rel_y as i32 + cy);
+                let coords = Coords2D::new_lattice(rel_x as i32 + cx, rel_y as i32 + cy);
                 return biome.tile(coords);
             });
         });
