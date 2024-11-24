@@ -1,18 +1,21 @@
-use crate::world::camera::Camera;
 use wgpu::util::DeviceExt;
 
-pub struct CameraBindGroup {
-    buffer: wgpu::Buffer,
-    bg: wgpu::BindGroup,
-    layout: wgpu::BindGroupLayout,
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+struct ScreenUniform {
+    size: [u32; 2],
 }
 
-impl CameraBindGroup {
-    pub fn new(camera: &Camera, device: &wgpu::Device) -> Self {
-        let buffer = Self::build_buffer(camera, device);
-        let (bg, layout) = Self::build_bind_group(&buffer, device);
+pub struct ScreenBindGroup {
+    bg: wgpu::BindGroup,
+    layout: wgpu::BindGroupLayout,
+    buffer: wgpu::Buffer,
+}
 
-        return Self { buffer, bg, layout };
+impl ScreenBindGroup {
+    pub fn new(size: &winit::dpi::PhysicalSize<u32>, device: &wgpu::Device) -> Self {
+        let (buffer, bg, layout) = Self::build(device, size);
+        return Self { bg, layout, buffer };
     }
 
     pub fn bind_group(&self) -> &wgpu::BindGroup {
@@ -23,32 +26,26 @@ impl CameraBindGroup {
         return &self.layout;
     }
 
-    pub fn write(&mut self, camera: &Camera, queue: &wgpu::Queue) {
-        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[camera.to_array()]));
-    }
-
-    fn build_buffer(camera: &Camera, device: &wgpu::Device) -> wgpu::Buffer {
-        let content = &camera.to_array();
+    fn build(
+        device: &wgpu::Device,
+        size: &winit::dpi::PhysicalSize<u32>,
+    ) -> (wgpu::Buffer, wgpu::BindGroup, wgpu::BindGroupLayout) {
+        let content = &[ScreenUniform {
+            size: [size.width as u32, size.height as u32],
+        }];
 
         let buffer_desc = wgpu::util::BufferInitDescriptor {
-            label: Some("camera_buffer"),
+            label: Some("screen_buffer"),
             contents: bytemuck::cast_slice(content),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         };
         let buffer = device.create_buffer_init(&buffer_desc);
 
-        return buffer;
-    }
-
-    fn build_bind_group(
-        buffer: &wgpu::Buffer,
-        device: &wgpu::Device,
-    ) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
         let layout_desc = wgpu::BindGroupLayoutDescriptor {
-            label: Some("camera_bind_group_layout"),
+            label: Some("screen_bind_group_layout"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -60,7 +57,7 @@ impl CameraBindGroup {
         let layout = device.create_bind_group_layout(&layout_desc);
 
         let bind_group_desc = wgpu::BindGroupDescriptor {
-            label: Some("camera_bind_group"),
+            label: Some("screen_bind_group"),
             layout: &layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -69,6 +66,6 @@ impl CameraBindGroup {
         };
         let bind_group = device.create_bind_group(&bind_group_desc);
 
-        return (bind_group, layout);
+        return (buffer, bind_group, layout);
     }
 }
