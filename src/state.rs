@@ -3,7 +3,10 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::{game, render, world::camera::Camera};
+use crate::{
+    game,
+    render::{self, bind_groups::camera::CameraBindGroup, world::WorldRender},
+};
 
 pub struct State<'a> {
     game: game::Game,
@@ -13,7 +16,7 @@ pub struct State<'a> {
     config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub camera_controller: render::camera::CameraController,
-    pub camera_buffer: wgpu::Buffer,
+    camera_bind_group: CameraBindGroup,
     texture_bind_group: wgpu::BindGroup,
     texture_bind_group_layout: wgpu::BindGroupLayout,
 }
@@ -78,20 +81,18 @@ impl<'a> State<'a> {
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
             // Desired maximum number of frames that presentation engine should enqueue in advance
-            // Typical valuues range from 3 to 1, but higher values can be used
+            // Typical values range from 3 to 1, but higher values can be used
             desired_maximum_frame_latency: 2,
         };
 
         surface.configure(&device, &config);
 
         let camera_controller = render::camera::CameraController::new();
-        let camera_buffer = build_camera_buffer(&device, game.camera_ref());
 
         let (texture_bind_group, texture_bind_group_layout) = build_texture(&device, &queue);
 
         return Self {
             game,
-            camera_buffer,
             camera_controller,
             surface,
             device,
@@ -100,6 +101,7 @@ impl<'a> State<'a> {
             size,
             texture_bind_group,
             texture_bind_group_layout,
+            camera_bind_group: CameraBindGroup::new(),
         };
     }
 
@@ -130,38 +132,21 @@ impl<'a> State<'a> {
         let (screen_bind_group, screen_bind_group_layout) =
             build_screen_bind_group(&self.device, &self.size);
 
-        let (camera_bind_group, camera_bind_group_layout) =
-            build_camera_bind_group(&self.device, &self.camera_buffer);
+        self.camera_bind_group
+            .write(self.game.camera(), &self.device, &self.queue);
 
         let pipeline = build_pipeline(
             &self.device,
             &self.config,
             &[
                 &screen_bind_group_layout,
-                &camera_bind_group_layout,
+                self.camera_bind_group.layout(),
                 &self.texture_bind_group_layout,
             ],
         );
 
-        let color_attachment = wgpu::RenderPassColorAttachment {
-            view: &image_view,
-            resolve_target: None,
-            ops: wgpu::Operations {
-                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                store: wgpu::StoreOp::Store,
-            },
-        };
-
-        let render_pass_desc = wgpu::RenderPassDescriptor {
-            label: Some("render_pass"),
-            color_attachments: &[Some(color_attachment)],
-            depth_stencil_attachment: None,
-            occlusion_query_set: None,
-            timestamp_writes: None,
-        };
-
-        let vertices = &render::tiles::TileRender::vertices();
         {
+            let vertices = &render::tiles::TileRender::vertices();
             let vertex_buffer_desc = wgpu::util::BufferInitDescriptor {
                 label: Some("vertex_buffer"),
                 contents: bytemuck::cast_slice(vertices),
@@ -169,8 +154,7 @@ impl<'a> State<'a> {
             };
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let world_render =
-                render::world::WorldRender::new(self.game.world_ref(), self.game.camera_ref());
+            let world_render = WorldRender::new(self.game.world(), self.game.camera());
             let instances = world_render.tiles();
 
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
@@ -179,6 +163,23 @@ impl<'a> State<'a> {
                 usage: wgpu::BufferUsages::VERTEX,
             };
             let instance_buffer = self.device.create_buffer_init(&instance_buffer_desc);
+
+            let color_attachment = wgpu::RenderPassColorAttachment {
+                view: &image_view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            };
+
+            let render_pass_desc = wgpu::RenderPassDescriptor {
+                label: Some("render_pass"),
+                color_attachments: &[Some(color_attachment)],
+                depth_stencil_attachment: None,
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            };
 
             // List of render commands in a command encoder. A render pass may contain any number of
             // drawing commands, and before/between each command the render state may be updated
@@ -191,7 +192,7 @@ impl<'a> State<'a> {
             render_pass.set_vertex_buffer(1, instance_buffer.slice(..));
 
             render_pass.set_bind_group(0, &screen_bind_group, &[]);
-            render_pass.set_bind_group(1, &camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.camera_bind_group.bind_group(), &[]);
             render_pass.set_bind_group(2, &self.texture_bind_group, &[]);
 
             render_pass.draw(0..vertices.len() as u32, 0..instances.len() as u32);
@@ -205,13 +206,10 @@ impl<'a> State<'a> {
 
     pub fn update_camera(&mut self) {
         let intention = self.camera_controller.build_walk_intention();
-        let new_coords = self.game.perform_walk(intention);
+        self.game.perform_walk(intention);
 
-        self.queue.write_buffer(
-            &self.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[new_coords.to_array()]),
-        );
+        self.camera_bind_group
+            .write(self.game.camera(), &self.device, &self.queue);
     }
 }
 
@@ -324,51 +322,6 @@ fn build_screen_bind_group(
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: buffer.as_entire_binding(),
-        }],
-    };
-    let bind_group = device.create_bind_group(&bind_group_desc);
-
-    return (bind_group, layout);
-}
-
-fn build_camera_buffer(device: &wgpu::Device, camera: &Camera) -> wgpu::Buffer {
-    let content = &camera.to_array();
-
-    let buffer_desc = wgpu::util::BufferInitDescriptor {
-        label: Some("camera_buffer"),
-        contents: bytemuck::cast_slice(content),
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    };
-    let buffer = device.create_buffer_init(&buffer_desc);
-
-    return buffer;
-}
-
-fn build_camera_bind_group(
-    device: &wgpu::Device,
-    camera: &wgpu::Buffer,
-) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
-    let layout_desc = wgpu::BindGroupLayoutDescriptor {
-        label: Some("camera_bind_group_layout"),
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
-    };
-    let layout = device.create_bind_group_layout(&layout_desc);
-
-    let bind_group_desc = wgpu::BindGroupDescriptor {
-        label: Some("camera_bind_group"),
-        layout: &layout,
-        entries: &[wgpu::BindGroupEntry {
-            binding: 0,
-            resource: camera.as_entire_binding(),
         }],
     };
     let bind_group = device.create_bind_group(&bind_group_desc);

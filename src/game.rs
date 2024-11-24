@@ -15,11 +15,11 @@ impl Game {
         return Self { camera, world };
     }
 
-    pub fn camera_ref(&self) -> &Camera {
+    pub fn camera(&self) -> &Camera {
         return &self.camera;
     }
 
-    pub fn world_ref(&self) -> &World {
+    pub fn world(&self) -> &World {
         return &self.world;
     }
 
