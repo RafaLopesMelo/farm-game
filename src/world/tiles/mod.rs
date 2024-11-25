@@ -15,4 +15,7 @@ pub trait Tile {
     fn kind(&self) -> TileKind;
     fn coords(&self) -> Coords3D;
     fn walkable(&self) -> bool;
+    fn is(&self, kind: TileKind) -> bool {
+        return self.kind() as i32 == kind as i32;
+    }
 }

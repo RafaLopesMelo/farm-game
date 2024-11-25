@@ -1,0 +1,9 @@
+- Open world game with procedural generated terrain
+- The intention is to be fully open to customize the world
+- The player will be able to create a farm, build roads, structures, bridges, etc.
+- After constructing a house villagers will start to move in
+- Villagers can be used to build structures, farm, etc.
+- The villagers hapiness matters
+- Will exist seasons that changes the weather
+- Will have economy with a specific coin or products can be traded
+- The results of farm can be used to produce more advanced products, like flour, etc.
