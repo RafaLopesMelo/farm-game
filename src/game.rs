@@ -40,7 +40,7 @@ impl Game {
             .expect("chunk to move is not loaded");
 
         let dest_tile = dest_chunk
-            .tile_at(dest)
+            .tile_at(&dest)
             .expect("tile to move is not loaded");
 
         if !dest_tile.walkable() {

@@ -24,7 +24,7 @@ impl Chunk {
         return &self.coords;
     }
 
-    pub fn tile_at(&self, coords: Coords2D) -> Option<&dyn Tile> {
+    pub fn tile_at(&self, coords: &Coords2D) -> Option<&dyn Tile> {
         if !self.contains(coords) {
             return None;
         }
@@ -35,7 +35,7 @@ impl Chunk {
         return Some(self.tiles[rel_x as usize][rel_y as usize].as_ref());
     }
 
-    pub fn contains(&self, coords: Coords2D) -> bool {
+    pub fn contains(&self, coords: &Coords2D) -> bool {
         let x = coords.lattice_x();
         let y = coords.lattice_y();
 

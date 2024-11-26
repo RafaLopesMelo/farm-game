@@ -43,6 +43,10 @@ impl TextureAtlas {
             return Self::texture_from_coords(Self::TILE_TEXTURE[0]);
         }
 
+        if tile.is(TileKind::Hill) {
+            return Self::texture_from_coords(Self::TILE_TEXTURE[2]);
+        }
+
         panic!("Unknown tile kind");
     }
 

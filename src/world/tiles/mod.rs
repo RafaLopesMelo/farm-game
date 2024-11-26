@@ -2,13 +2,15 @@ use super::coords::Coords3D;
 
 pub mod dirt;
 pub mod grass;
+pub mod hill;
 pub mod water;
 
 #[derive(Copy, Clone)]
 pub enum TileKind {
     Dirt = 0,
     Grass = 1,
-    Water = 2,
+    Hill = 2,
+    Water = 3,
 }
 
 pub trait Tile {
@@ -18,4 +20,11 @@ pub trait Tile {
     fn is(&self, kind: TileKind) -> bool {
         return self.kind() as i32 == kind as i32;
     }
+}
+
+pub enum TileDirection {
+    Up,
+    Down,
+    Left,
+    Right,
 }

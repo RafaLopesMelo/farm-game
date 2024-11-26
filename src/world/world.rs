@@ -67,7 +67,7 @@ impl World {
         // TODO -> Optimize
         for row in chunks {
             for chunk in row {
-                if chunk.contains(coords) {
+                if chunk.contains(&coords) {
                     return Some(chunk);
                 }
             }
@@ -76,7 +76,7 @@ impl World {
         return None;
     }
 
-    pub fn neighbors_of(&self, coords: Coords2D) -> [&dyn Tile; 4] {
+    fn neighbors(&self, coords: &Coords2D) -> [&dyn Tile; 4] {
         let x = coords.lattice_x();
         let y = coords.lattice_y();
 

@@ -1,6 +1,6 @@
 use crate::world::coords::Coords2D;
 
-use super::perlin::PerlinNoise;
+use super::{cache::NoiseCache, perlin::PerlinNoise};
 
 pub struct FractalNoise {
     noise: PerlinNoise,
@@ -13,7 +13,12 @@ impl FractalNoise {
         };
     }
 
-    pub fn generate(&self, coords: Coords2D, desc: &FractalNoiseGenerationDescriptor) -> f32 {
+    pub fn generate(
+        &self,
+        coords: Coords2D,
+        desc: &FractalNoiseGenerationDescriptor,
+        cache: Option<&NoiseCache>,
+    ) -> f32 {
         let mut noise = 0.0;
         let mut amplitude = 1.0;
         let mut max_value = 0.0;
