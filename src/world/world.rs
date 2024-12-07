@@ -51,6 +51,7 @@ impl World {
                 }
 
                 let coords = Coords2D::new_lattice(x * cs, y * cs);
+
                 let chunk = self.generator.generate(coords);
 
                 self.chunks
@@ -62,21 +63,16 @@ impl World {
     }
 
     pub fn chunk_at(&self, coords: Coords2D) -> Option<&Chunk> {
-        let chunks = self.chunks_vec();
+        let cx = (coords.lattice_x() as f32 / CHUNK_SIZE as f32).floor() as i32;
+        let cy = (coords.lattice_y() as f32 / CHUNK_SIZE as f32).floor() as i32;
 
-        // TODO -> Optimize
-        for row in chunks {
-            for chunk in row {
-                if chunk.contains(&coords) {
-                    return Some(chunk);
-                }
-            }
-        }
-
-        return None;
+        let c = self.chunks.get(&cx).and_then(|row| row.get(&cy));
+        return c;
     }
 
-    fn neighbors(&self, coords: &Coords2D) -> [&dyn Tile; 4] {
+    pub fn neighbors_of(&self, coords: &Coords2D) -> Option<[Box<&dyn Tile>; 4]> {
+        return None;
+
         let x = coords.lattice_x();
         let y = coords.lattice_y();
 
@@ -95,7 +91,16 @@ impl World {
         let r = r_chunk.and_then(|c| c.tile_at(coords));
         let l = l_chunk.and_then(|c| c.tile_at(coords));
 
-        return [t.unwrap(), b.unwrap(), r.unwrap(), l.unwrap()];
+        if t.is_none() || b.is_none() || r.is_none() || l.is_none() {
+            return None;
+        }
+
+        return Some([
+            Box::new(t.unwrap()),
+            Box::new(r.unwrap()),
+            Box::new(b.unwrap()),
+            Box::new(l.unwrap()),
+        ]);
     }
 
     pub fn chunks_vec(&self) -> Vec<Vec<&Chunk>> {

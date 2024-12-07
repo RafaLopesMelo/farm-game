@@ -1,7 +1,4 @@
-use super::{
-    texture::{Texture, TextureAtlas},
-    vertex::Vertex,
-};
+use super::{texture::Texture, vertex::Vertex};
 use crate::world::{camera::Camera, tiles::Tile};
 
 #[repr(C)]
@@ -14,17 +11,13 @@ pub struct TileRender {
 }
 
 impl TileRender {
-    pub fn new(tile: &dyn Tile, camera: &Camera) -> Self {
-        let atlas = TextureAtlas::new();
-
+    pub fn new(tile: &dyn Tile, texture: Texture, camera: &Camera) -> Self {
         let coords = &tile.coords();
 
         let s = Self::size() as i32;
         let diff = camera.coords.offset(&coords.to_2d());
 
         let offset: [i32; 2] = [diff[0].floor() as i32 * s, diff[1].floor() as i32 * s];
-
-        let texture = atlas.texture_for_tile(tile);
 
         return Self {
             coords: coords.to_array(),
@@ -36,7 +29,7 @@ impl TileRender {
 
     /// Size of a tile in pixels
     pub fn size() -> u32 {
-        let size: u32 = 24;
+        let size: u32 = 32;
         return size;
     }
 

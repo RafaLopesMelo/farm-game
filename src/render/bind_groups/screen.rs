@@ -26,6 +26,14 @@ impl ScreenBindGroup {
         return &self.layout;
     }
 
+    pub fn write(&mut self, size: &winit::dpi::PhysicalSize<u32>, queue: &wgpu::Queue) {
+        let content = &[ScreenUniform {
+            size: [size.width as u32, size.height as u32],
+        }];
+
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(content));
+    }
+
     fn build(
         device: &wgpu::Device,
         size: &winit::dpi::PhysicalSize<u32>,

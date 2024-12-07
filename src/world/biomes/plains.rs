@@ -4,9 +4,7 @@ use crate::world::{
         cache::NoiseCache,
         fractal::{FractalNoise, FractalNoiseGenerationDescriptor},
     },
-    tiles::{
-        dirt::DirtTile, grass::GrassTile, hill::HillTile, water::WaterTile, Tile, TileDirection,
-    },
+    tiles::{dirt::DirtTile, grass::GrassTile, water::WaterTile, Tile},
 };
 
 pub struct PlainsBiome {
@@ -39,12 +37,6 @@ impl PlainsBiome {
             return Box::new(WaterTile::new(c)) as Box<dyn Tile>;
         }
 
-        let edge = self.edge(c);
-
-        if edge.is_some() {
-            return Box::new(HillTile::new(c, edge.unwrap())) as Box<dyn Tile>;
-        }
-
         if noise > 0.1 && noise <= 0.15 || noise > -0.15 && noise <= -0.1 {
             return Box::new(DirtTile::new(c)) as Box<dyn Tile>;
         }
@@ -72,30 +64,5 @@ impl PlainsBiome {
         }
 
         return 1;
-    }
-
-    fn edge(&self, coords: Coords3D) -> Option<TileDirection> {
-        let dirs = [
-            ([1, 0], TileDirection::Right), // right
-            ([-1, 0], TileDirection::Left), // left
-            ([0, 1], TileDirection::Up),    // top
-            ([0, -1], TileDirection::Down), // down
-            ([1, 1], TileDirection::Up),    // right top
-            ([-1, 1], TileDirection::Up),   // left top
-            ([1, -1], TileDirection::Up),   // right bottom
-            ([-1, -1], TileDirection::Up),  // left bottom
-        ];
-
-        for dir in dirs {
-            let x = coords.lattice_x() + dir.0[0];
-            let y = coords.lattice_y() + dir.0[1];
-            let n = self.height(Coords2D::new_lattice(x, y));
-
-            if n < coords.lattice_z() {
-                return Some(dir.1);
-            }
-        }
-
-        return None;
     }
 }

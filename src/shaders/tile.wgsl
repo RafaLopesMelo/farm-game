@@ -72,7 +72,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         return USER_COLOR;
     } else {
         let color = textureSample(t_diffuse, s_diffuse, in.texture_coords);
-        let brightness_factor = 1.0 - f32(in.instance_coords.z) / 2;
-        return color * brightness_factor;
+        return color;
     }
 }

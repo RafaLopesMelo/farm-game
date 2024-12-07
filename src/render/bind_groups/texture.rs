@@ -21,7 +21,7 @@ impl TextureBindGroup {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
-        let buffer = include_bytes!("../../../assets/atlas.png");
+        let buffer = include_bytes!("../../../assets/tileset.png");
         let img = image::load_from_memory(buffer).unwrap();
         let rgba = img.to_rgba8();
 
@@ -69,7 +69,7 @@ impl TextureBindGroup {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
+            mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()

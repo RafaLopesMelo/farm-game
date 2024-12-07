@@ -11,8 +11,8 @@ impl Tile for GrassTile {
         return TileKind::Grass;
     }
 
-    fn coords(&self) -> Coords3D {
-        return self.coords;
+    fn coords(&self) -> &Coords3D {
+        return &self.coords;
     }
 
     fn walkable(&self) -> bool {

@@ -119,6 +119,8 @@ impl<'a> State<'a> {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+
+            self.screen_bind_group.write(&self.size, &self.queue);
         }
     }
 

@@ -11,8 +11,8 @@ impl Tile for WaterTile {
         return TileKind::Water;
     }
 
-    fn coords(&self) -> Coords3D {
-        return self.coords;
+    fn coords(&self) -> &Coords3D {
+        return &self.coords;
     }
 
     fn walkable(&self) -> bool {

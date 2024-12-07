@@ -75,6 +75,14 @@ impl Coords3D {
         return self.coords[2];
     }
 
+    pub fn higher_than(&self, other: &Coords3D) -> bool {
+        return self.z() > other.z();
+    }
+
+    pub fn as_high_as(&self, other: &Coords3D) -> bool {
+        return self.z() == other.z();
+    }
+
     pub fn offset(&self, other: &Coords3D) -> [f32; 3] {
         return [
             other.x() - self.x(),

@@ -39,6 +39,8 @@ impl Game {
             .chunk_at(dest)
             .expect("chunk to move is not loaded");
 
+        println!("dest chunk: {:?}", dest_chunk.coords());
+
         let dest_tile = dest_chunk
             .tile_at(&dest)
             .expect("tile to move is not loaded");
