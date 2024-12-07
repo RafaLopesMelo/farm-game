@@ -30,11 +30,7 @@ impl TextureAtlas {
         return Self {};
     }
 
-    pub fn texture_for_tile(
-        &self,
-        tile: &dyn Tile,
-        neighbors: Option<[Box<&dyn Tile>; 4]>,
-    ) -> Texture {
+    pub fn texture_for_tile(&self, tile: &dyn Tile, neighbors: Option<[&dyn Tile; 4]>) -> Texture {
         if tile.is(TileKind::Water) {
             return Self::texture_from_coords(Self::TILE_TEXTURE[3]);
         }
@@ -50,7 +46,7 @@ impl TextureAtlas {
         panic!("Unknown tile kind");
     }
 
-    fn handle_grass(&self, tile: &dyn Tile, neighbors: Option<[Box<&dyn Tile>; 4]>) -> Texture {
+    fn handle_grass(&self, tile: &dyn Tile, neighbors: Option<[&dyn Tile; 4]>) -> Texture {
         return Self::texture_from_coords([0.0, 0.0]);
 
         if neighbors.is_none() {
@@ -61,10 +57,10 @@ impl TextureAtlas {
 
         let n = neighbors.unwrap();
 
-        let top = n[0].as_ref();
-        let right = n[1].as_ref();
-        let bottom = n[2].as_ref();
-        let left = n[3].as_ref();
+        let top = n[0];
+        let right = n[1];
+        let bottom = n[2];
+        let left = n[3];
 
         if coords.higher_than(bottom.coords()) {
             let coords_r = right.coords();

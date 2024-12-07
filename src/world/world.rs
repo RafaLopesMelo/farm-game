@@ -9,8 +9,9 @@ use super::{
 };
 
 pub struct World {
-    chunks: HashMap<i32, HashMap<i32, Chunk>>,
+    chunks: HashMap<Coords2D, Chunk>,
     generator: WorldGenerator,
+    neighbors_cache: HashMap<Coords2D, [&'static dyn Tile; 4]>,
 }
 
 impl World {
@@ -18,6 +19,7 @@ impl World {
         return Self {
             chunks: HashMap::new(),
             generator: WorldGenerator::new(),
+            neighbors_cache: HashMap::new(),
         };
     }
 
@@ -47,6 +49,9 @@ impl World {
             for y in bottom..top {
                 let already_loaded = self.chunk_at(Coords2D::new_lattice(x * cs, y * cs));
                 if already_loaded.is_some() {
+                    println!("Already loaded");
+                }
+                if already_loaded.is_some() {
                     continue;
                 }
 
@@ -55,22 +60,20 @@ impl World {
                 let chunk = self.generator.generate(coords);
 
                 self.chunks
-                    .entry(x)
-                    .or_insert(HashMap::new())
-                    .insert(y, chunk);
+                    .entry(Coords2D::new_lattice(x * cs, y * cs))
+                    .or_insert(chunk);
             }
         }
     }
 
     pub fn chunk_at(&self, coords: Coords2D) -> Option<&Chunk> {
-        let cx = (coords.lattice_x() as f32 / CHUNK_SIZE as f32).floor() as i32;
-        let cy = (coords.lattice_y() as f32 / CHUNK_SIZE as f32).floor() as i32;
+        let cx = (coords.x() / CHUNK_SIZE as f32).floor() as i32 * 32;
+        let cy = (coords.y() / CHUNK_SIZE as f32).floor() as i32 * 32;
 
-        let c = self.chunks.get(&cx).and_then(|row| row.get(&cy));
-        return c;
+        return self.chunks.get(&Coords2D::new_lattice(cx, cy));
     }
 
-    pub fn neighbors_of(&self, coords: &Coords2D) -> Option<[Box<&dyn Tile>; 4]> {
+    pub fn neighbors_of(&self, coords: &Coords2D) -> Option<[&dyn Tile; 4]> {
         return None;
 
         let x = coords.lattice_x();
@@ -95,21 +98,10 @@ impl World {
             return None;
         }
 
-        return Some([
-            Box::new(t.unwrap()),
-            Box::new(r.unwrap()),
-            Box::new(b.unwrap()),
-            Box::new(l.unwrap()),
-        ]);
+        return Some([t.unwrap(), r.unwrap(), b.unwrap(), l.unwrap()]);
     }
 
-    pub fn chunks_vec(&self) -> Vec<Vec<&Chunk>> {
-        return self
-            .chunks
-            .values()
-            .map(|x| {
-                return x.values().collect::<Vec<&Chunk>>();
-            })
-            .collect::<Vec<Vec<&Chunk>>>();
+    pub fn chunks_vec(&self) -> Vec<&Chunk> {
+        return self.chunks.values().collect::<Vec<&Chunk>>();
     }
 }

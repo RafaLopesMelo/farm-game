@@ -13,20 +13,14 @@ impl WorldRender {
         let tiles = world
             .chunks_vec()
             .iter()
-            .flat_map(|row| {
-                return row.iter().flat_map(|chunk| {
-                    return chunk
-                        .tiles()
-                        .iter()
-                        .flat_map(|row| {
-                            return row.iter().map(|tile| {
-                                let neighbors = world.neighbors_of(&tile.coords().to_2d());
-                                let texture = atlas.texture_for_tile(tile.as_ref(), neighbors);
+            .flat_map(|chunk| {
+                return chunk.tiles().iter().flat_map(|row| {
+                    return row.iter().map(|tile| {
+                        let neighbors = world.neighbors_of(&tile.coords().to_2d());
+                        let texture = atlas.texture_for_tile(tile.as_ref(), neighbors);
 
-                                return TileRender::new(tile.as_ref(), texture, camera);
-                            });
-                        })
-                        .collect::<Vec<TileRender>>();
+                        return TileRender::new(tile.as_ref(), texture, camera);
+                    });
                 });
             })
             .collect::<Vec<TileRender>>();

@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Coords2D {
     coords: [f32; 2],
@@ -34,6 +36,21 @@ impl Coords2D {
 
     pub fn to_array(&self) -> [f32; 2] {
         return self.coords;
+    }
+}
+
+impl PartialEq for Coords2D {
+    fn eq(&self, other: &Self) -> bool {
+        return self.x() == other.x() && self.y() == other.y();
+    }
+}
+
+impl Eq for Coords2D {}
+
+impl Hash for Coords2D {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.x().to_bits().hash(state);
+        self.y().to_bits().hash(state);
     }
 }
 
