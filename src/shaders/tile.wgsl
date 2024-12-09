@@ -55,7 +55,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.kind = in.kind;
 
     let texture_x = mix(in.texture_uv_min.x, in.texture_uv_max.x, in.vertex_texture_uv.x);
-    let texture_y = mix(in.texture_uv_min.y, in.texture_uv_max.y, in.vertex_texture_uv.y);
+    let texture_y = mix(in.texture_uv_max.y, in.texture_uv_min.y, in.vertex_texture_uv.y); // Yes, this is inverted ZzZ
     out.texture_coords = vec2<f32>(texture_x, texture_y);
 
     return out;

@@ -19,10 +19,3 @@ pub trait Tile {
         return self.kind() as i32 == kind as i32;
     }
 }
-
-pub enum TileDirection {
-    Up,
-    Down,
-    Left,
-    Right,
-}

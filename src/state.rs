@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use wgpu::util::DeviceExt;
 use winit::window::Window;
@@ -10,6 +10,7 @@ use crate::{
         bind_groups::{
             camera::CameraBindGroup, screen::ScreenBindGroup, texture::TextureBindGroup,
         },
+        texture::TextureAtlas,
         world::WorldRender,
     },
 };
@@ -25,6 +26,7 @@ pub struct State<'a> {
     camera_bind_group: CameraBindGroup,
     screen_bind_group: ScreenBindGroup,
     texture_bind_group: TextureBindGroup,
+    texture_atlas: TextureAtlas,
 }
 
 impl<'a> State<'a> {
@@ -110,6 +112,7 @@ impl<'a> State<'a> {
             camera_bind_group,
             screen_bind_group,
             texture_bind_group,
+            texture_atlas: TextureAtlas::new(),
         };
     }
 
@@ -158,7 +161,11 @@ impl<'a> State<'a> {
             };
             let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let world_render = WorldRender::new(self.game.world(), self.game.camera());
+            let world_render = WorldRender::new(
+                self.game.world(),
+                Mutex::new(&mut self.texture_atlas),
+                self.game.camera(),
+            );
             let instances = world_render.tiles();
 
             let instance_buffer_desc = wgpu::util::BufferInitDescriptor {

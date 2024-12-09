@@ -11,7 +11,6 @@ use super::{
 pub struct World {
     chunks: HashMap<Coords2D, Chunk>,
     generator: WorldGenerator,
-    neighbors_cache: HashMap<Coords2D, [&'static dyn Tile; 4]>,
 }
 
 impl World {
@@ -19,7 +18,6 @@ impl World {
         return Self {
             chunks: HashMap::new(),
             generator: WorldGenerator::new(),
-            neighbors_cache: HashMap::new(),
         };
     }
 
@@ -37,7 +35,7 @@ impl World {
         };
 
         let cs = CHUNK_SIZE as i32;
-        let r = 5 * cs; // Radius in tiles
+        let r = 2 * cs; // Radius in tiles
 
         // offsets in chunks quantity
         let left = (center.x().floor() as i32 - r) / cs;
@@ -74,31 +72,31 @@ impl World {
     }
 
     pub fn neighbors_of(&self, coords: &Coords2D) -> Option<[&dyn Tile; 4]> {
-        return None;
-
         let x = coords.lattice_x();
         let y = coords.lattice_y();
 
-        let tc = Coords2D::new_lattice(x, y + 1);
-        let bc = Coords2D::new_lattice(x, y - 1);
-        let rc = Coords2D::new_lattice(x + 1, y);
-        let lc = Coords2D::new_lattice(x - 1, y);
+        let n_coords = [
+            Coords2D::new_lattice(x, y + 1),
+            Coords2D::new_lattice(x, y - 1),
+            Coords2D::new_lattice(x + 1, y),
+            Coords2D::new_lattice(x - 1, y),
+        ];
 
-        let t_chunk = self.chunk_at(tc);
-        let b_chunk = self.chunk_at(bc);
-        let r_chunk = self.chunk_at(rc);
-        let l_chunk = self.chunk_at(lc);
+        let mut n_vec = Vec::with_capacity(4);
 
-        let t = t_chunk.and_then(|c| c.tile_at(coords));
-        let b = b_chunk.and_then(|c| c.tile_at(coords));
-        let r = r_chunk.and_then(|c| c.tile_at(coords));
-        let l = l_chunk.and_then(|c| c.tile_at(coords));
+        for &n_coord in n_coords.iter() {
+            let n_chunk = self.chunk_at(n_coord);
+            let n = n_chunk.and_then(|c| c.tile_at(&n_coord));
 
-        if t.is_none() || b.is_none() || r.is_none() || l.is_none() {
-            return None;
+            if n.is_none() {
+                return None;
+            }
+
+            n_vec.push(n.unwrap());
         }
 
-        return Some([t.unwrap(), r.unwrap(), b.unwrap(), l.unwrap()]);
+        let neighbors = [n_vec[0], n_vec[1], n_vec[2], n_vec[3]];
+        return Some(neighbors);
     }
 
     pub fn chunks_vec(&self) -> Vec<&Chunk> {

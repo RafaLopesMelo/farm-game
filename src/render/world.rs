@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use crate::world::{camera::Camera, world::World};
 
 use super::{texture::TextureAtlas, tiles::TileRender};
@@ -7,19 +9,21 @@ pub struct WorldRender {
 }
 
 impl WorldRender {
-    pub fn new(world: &World, camera: &Camera) -> Self {
-        let atlas = TextureAtlas::new();
-
+    pub fn new(world: &World, atlas: Mutex<&mut TextureAtlas>, camera: &Camera) -> Self {
         let tiles = world
             .chunks_vec()
             .iter()
             .flat_map(|chunk| {
                 return chunk.tiles().iter().flat_map(|row| {
                     return row.iter().map(|tile| {
-                        let neighbors = world.neighbors_of(&tile.coords().to_2d());
-                        let texture = atlas.texture_for_tile(tile.as_ref(), neighbors);
+                        let mut a = atlas.lock().unwrap();
+                        let texture = a.cached_texture(tile.as_ref()).or_else(|| {
+                            let neighbors = world.neighbors_of(&tile.coords().to_2d());
+                            let texture = a.texture_for_tile(tile.as_ref(), neighbors);
+                            return Some(texture);
+                        });
 
-                        return TileRender::new(tile.as_ref(), texture, camera);
+                        return TileRender::new(tile.as_ref(), texture.unwrap(), camera);
                     });
                 });
             })
@@ -32,3 +36,5 @@ impl WorldRender {
         return self.tiles.clone();
     }
 }
+
+// [0.2, 0.0], uv_max: [0.299, 0.165]

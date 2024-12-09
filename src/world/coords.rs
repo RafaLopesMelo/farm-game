@@ -116,3 +116,19 @@ impl Coords3D {
         return Coords2D::new(self.x(), self.y());
     }
 }
+
+impl PartialEq for Coords3D {
+    fn eq(&self, other: &Self) -> bool {
+        return self.x() == other.x() && self.y() == other.y() && self.z() == other.z();
+    }
+}
+
+impl Eq for Coords3D {}
+
+impl Hash for Coords3D {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.x().to_bits().hash(state);
+        self.y().to_bits().hash(state);
+        self.z().to_bits().hash(state);
+    }
+}

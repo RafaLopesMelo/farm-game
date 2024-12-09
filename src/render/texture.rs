@@ -1,4 +1,9 @@
-use crate::world::tiles::{Tile, TileKind};
+use std::collections::HashMap;
+
+use crate::world::{
+    coords::Coords3D,
+    tiles::{Tile, TileKind},
+};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -13,7 +18,9 @@ impl Texture {
     }
 }
 
-pub struct TextureAtlas {}
+pub struct TextureAtlas {
+    cache: HashMap<Coords3D, Texture>,
+}
 
 impl TextureAtlas {
     const ATLAS_ROWS: f32 = 6.0;
@@ -27,10 +34,26 @@ impl TextureAtlas {
     ];
 
     pub fn new() -> Self {
-        return Self {};
+        return Self {
+            cache: HashMap::new(),
+        };
     }
 
-    pub fn texture_for_tile(&self, tile: &dyn Tile, neighbors: Option<[&dyn Tile; 4]>) -> Texture {
+    pub fn cached_texture(&self, tile: &dyn Tile) -> Option<Texture> {
+        return self.cache.get(&tile.coords()).cloned();
+    }
+
+    pub fn texture_for_tile(
+        &mut self,
+        tile: &dyn Tile,
+        neighbors: Option<[&dyn Tile; 4]>,
+    ) -> Texture {
+        let texture = self._texture_for_tile(tile, neighbors);
+        self.cache.insert(tile.coords().clone(), texture);
+        return texture;
+    }
+
+    fn _texture_for_tile(&self, tile: &dyn Tile, neighbors: Option<[&dyn Tile; 4]>) -> Texture {
         if tile.is(TileKind::Water) {
             return Self::texture_from_coords(Self::TILE_TEXTURE[3]);
         }
@@ -47,8 +70,6 @@ impl TextureAtlas {
     }
 
     fn handle_grass(&self, tile: &dyn Tile, neighbors: Option<[&dyn Tile; 4]>) -> Texture {
-        return Self::texture_from_coords([0.0, 0.0]);
-
         if neighbors.is_none() {
             return Self::texture_from_coords([0.0, 0.0]);
         }
@@ -70,21 +91,23 @@ impl TextureAtlas {
             let as_high_l = coords_l.as_high_as(coords);
 
             if as_high_r && as_high_l {
-                return Self::texture_from_coords([1.0, 0.0]);
-            }
-
-            if as_high_l {
                 return Self::texture_from_coords([0.0, 1.0]);
             }
 
-            if as_high_r {
-                return Self::texture_from_coords([0.0, 9.0]);
+            if as_high_l {
+                println!("High left");
+                return Self::texture_from_coords([1.0, 0.0]);
             }
 
-            return Self::texture_from_coords([0.0, 0.0]);
+            if as_high_r {
+                println!("High right");
+                return Self::texture_from_coords([9.0, 0.0]);
+            }
+
+            return Self::texture_from_coords([1.0, 1.0]);
         }
 
-        return Self::texture_from_coords([1.0, 1.0]);
+        return Self::texture_from_coords([0.0, 0.0]);
     }
 
     fn texture_from_coords(coords: [f32; 2]) -> Texture {
