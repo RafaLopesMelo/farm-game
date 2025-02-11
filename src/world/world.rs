@@ -77,8 +77,8 @@ impl World {
 
         let n_coords = [
             Coords2D::new_lattice(x, y + 1),
-            Coords2D::new_lattice(x, y - 1),
             Coords2D::new_lattice(x + 1, y),
+            Coords2D::new_lattice(x, y - 1),
             Coords2D::new_lattice(x - 1, y),
         ];
 

@@ -1,6 +1,6 @@
 pub mod bind_groups;
 pub mod camera;
-pub mod texture;
+pub mod textures;
 pub mod tiles;
 pub mod vertex;
 pub mod world;

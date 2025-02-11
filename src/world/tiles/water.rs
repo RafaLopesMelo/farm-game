@@ -1,6 +1,7 @@
-use crate::world::coords::Coords3D;
+use std::any::Any;
 
 use super::{Tile, TileKind};
+use crate::world::coords::Coords3D;
 
 pub struct WaterTile {
     coords: Coords3D,
@@ -17,6 +18,10 @@ impl Tile for WaterTile {
 
     fn walkable(&self) -> bool {
         return false;
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        return self;
     }
 }
 

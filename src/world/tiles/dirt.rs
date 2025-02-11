@@ -18,6 +18,10 @@ impl Tile for DirtTile {
     fn walkable(&self) -> bool {
         return true;
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
 }
 
 impl DirtTile {

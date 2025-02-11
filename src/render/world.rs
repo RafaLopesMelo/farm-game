@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use crate::world::{camera::Camera, world::World};
 
-use super::{texture::TextureAtlas, tiles::TileRender};
+use super::{textures::TextureAtlas, tiles::TileRender};
 
 pub struct WorldRender {
     tiles: Vec<TileRender>,

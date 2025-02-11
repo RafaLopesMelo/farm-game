@@ -1,4 +1,4 @@
-use super::{texture::Texture, vertex::Vertex};
+use super::{textures::Texture, vertex::Vertex};
 use crate::world::{camera::Camera, tiles::Tile};
 
 #[repr(C)]

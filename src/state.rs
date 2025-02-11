@@ -10,7 +10,7 @@ use crate::{
         bind_groups::{
             camera::CameraBindGroup, screen::ScreenBindGroup, texture::TextureBindGroup,
         },
-        texture::TextureAtlas,
+        textures::TextureAtlas,
         world::WorldRender,
     },
 };
