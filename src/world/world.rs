@@ -8,6 +8,10 @@ use super::{
     tiles::Tile,
 };
 
+pub trait TileLocator {
+    fn tile_at(&self, coords: Coords2D) -> Option<&dyn Tile>;
+}
+
 pub struct World {
     chunks: HashMap<Coords2D, Chunk>,
     generator: WorldGenerator,
@@ -71,35 +75,14 @@ impl World {
         return self.chunks.get(&Coords2D::new_lattice(cx, cy));
     }
 
-    pub fn neighbors_of(&self, coords: &Coords2D) -> Option<[&dyn Tile; 4]> {
-        let x = coords.lattice_x();
-        let y = coords.lattice_y();
-
-        let n_coords = [
-            Coords2D::new_lattice(x, y + 1),
-            Coords2D::new_lattice(x + 1, y),
-            Coords2D::new_lattice(x, y - 1),
-            Coords2D::new_lattice(x - 1, y),
-        ];
-
-        let mut n_vec = Vec::with_capacity(4);
-
-        for &n_coord in n_coords.iter() {
-            let n_chunk = self.chunk_at(n_coord);
-            let n = n_chunk.and_then(|c| c.tile_at(&n_coord));
-
-            if n.is_none() {
-                return None;
-            }
-
-            n_vec.push(n.unwrap());
-        }
-
-        let neighbors = [n_vec[0], n_vec[1], n_vec[2], n_vec[3]];
-        return Some(neighbors);
-    }
-
     pub fn chunks_vec(&self) -> Vec<&Chunk> {
         return self.chunks.values().collect::<Vec<&Chunk>>();
+    }
+}
+
+impl TileLocator for World {
+    fn tile_at(&self, coords: Coords2D) -> Option<&dyn Tile> {
+        let chunk = self.chunk_at(coords)?;
+        return chunk.tile_at(&coords);
     }
 }

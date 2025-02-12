@@ -18,8 +18,7 @@ impl WorldRender {
                     return row.iter().map(|tile| {
                         let mut a = atlas.lock().unwrap();
                         let texture = a.cached_texture(tile.as_ref()).or_else(|| {
-                            let neighbors = world.neighbors_of(&tile.coords().to_2d());
-                            let texture = a.texture_for_tile(tile.as_ref(), neighbors);
+                            let texture = a.texture_for_tile(tile.as_ref(), &world);
                             return Some(texture);
                         });
 
