@@ -242,7 +242,7 @@ fn build_pipeline(
 
     let color_state = &[Some(wgpu::ColorTargetState {
         format: config.format,
-        blend: Some(wgpu::BlendState::REPLACE),
+        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
         write_mask: wgpu::ColorWrites::ALL,
     })];
 
