@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use crate::world::{camera::Camera, world::World};
 
-use super::{textures::TextureAtlas, tiles::TileRender};
+use super::{textures::atlas::TextureAtlas, tiles::TileRender};
 
 pub struct WorldRender {
     tiles: Vec<TileRender>,
@@ -18,7 +18,7 @@ impl WorldRender {
                     return row.iter().map(|tile| {
                         let mut a = atlas.lock().unwrap();
                         let texture = a.cached_texture(tile.as_ref()).or_else(|| {
-                            let texture = a.texture_for_tile(tile.as_ref(), &world);
+                            let texture = a.texture_for_tile(tile.as_ref(), world);
                             return Some(texture);
                         });
 

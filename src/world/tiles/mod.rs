@@ -1,4 +1,7 @@
-use std::any::Any;
+use std::{
+    any::Any,
+    fmt::{self, Display},
+};
 
 use super::coords::Coords3D;
 
@@ -11,6 +14,12 @@ pub enum TileKind {
     Dirt = 0,
     Grass = 1,
     Water = 2,
+}
+
+impl Display for TileKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 pub trait Tile: Any {
