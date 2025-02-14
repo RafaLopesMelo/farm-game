@@ -1,5 +1,5 @@
 pub mod atlas;
-mod dictionary;
+mod tileset;
 
 use std::hash::Hash;
 

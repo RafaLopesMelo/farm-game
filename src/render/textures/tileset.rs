@@ -2,22 +2,22 @@ use std::collections::HashMap;
 
 use crate::world::tiles::TileKind;
 
-pub struct TextureDictionary {
-    dict: HashMap<String, [u32; 2]>,
+pub struct TilesetDict {
+    dict: HashMap<String, Vec<Vec<[u32; 2]>>>,
 }
 
-impl TextureDictionary {
+impl TilesetDict {
     pub fn new() -> Self {
         let mut h = HashMap::new();
 
         h.insert(
-            TextureDictionary::key_from([
+            TilesetDict::key_from([
                 TileKind::Grass,
                 TileKind::Grass,
                 TileKind::Grass,
                 TileKind::Grass,
             ]),
-            [0, 0],
+            vec![vec![[0, 1]]],
         );
 
         return Self { dict: h };
@@ -35,7 +35,7 @@ impl TextureDictionary {
     }
 
     pub fn get(&self, tiles: [TileKind; 4]) -> Option<[u32; 2]> {
-        let key = TextureDictionary::key_from(tiles);
+        let key = TilesetDict::key_from(tiles);
         return self.dict.get(&key).copied();
     }
 }
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_key_from() {
-        let key = TextureDictionary::key_from([
+        let key = TilesetDict::key_from([
             TileKind::Grass,
             TileKind::Grass,
             TileKind::Grass,
@@ -54,5 +54,18 @@ mod tests {
         ]);
 
         assert_eq!(key, "Grass_Grass_Grass_Grass");
+    }
+
+    #[test]
+    fn test_grass_grass_grass_grass() {
+        let dict = TilesetDict::new();
+        let texture = dict.get([
+            TileKind::Grass,
+            TileKind::Grass,
+            TileKind::Grass,
+            TileKind::Grass,
+        ]);
+
+        assert_eq!(texture, Some([0, 1]));
     }
 }

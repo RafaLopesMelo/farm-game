@@ -6,20 +6,20 @@ use crate::world::{
     world::TileLocator,
 };
 
-use super::{dictionary::TextureDictionary, Texture};
+use super::{tileset::TilesetDict, Texture};
 
 pub struct TextureAtlas {
-    dict: TextureDictionary,
+    dict: TilesetDict,
     cache: HashMap<Coords3D, Texture>,
 }
 
 impl TextureAtlas {
-    const ATLAS_ROWS: f32 = 6.0;
+    const ATLAS_ROWS: f32 = 3.0;
     const ATLAS_COLUMNS: f32 = 10.0;
 
     pub fn new() -> Self {
         return Self {
-            dict: TextureDictionary::new(),
+            dict: TilesetDict::new(),
             cache: HashMap::new(),
         };
     }

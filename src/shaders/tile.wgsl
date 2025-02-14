@@ -3,9 +3,8 @@ struct VertexInput {
     @location(1) vertex_texture_uv: vec2<f32>,
     @location(2) instance_coords: vec3<f32>,
     @location(3) instance_offset: vec2<i32>,
-    @location(4) kind: u32,
-    @location(5) texture_uv_min: vec2<f32>,
-    @location(6) texture_uv_max: vec2<f32>,
+    @location(4) texture_uv_min: vec2<f32>,
+    @location(5) texture_uv_max: vec2<f32>,
 }
 
 struct Screen {
@@ -29,9 +28,8 @@ var s_diffuse: sampler;
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) kind: u32,
-    @location(2) instance_coords: vec3<f32>,
-    @location(3) texture_coords: vec2<f32>,
+    @location(0) instance_coords: vec3<f32>,
+    @location(1) texture_coords: vec2<f32>,
 }
 
 fn to_ndc(pixels: i32, physical_size: u32) -> f32 {
@@ -52,7 +50,6 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     out.position = vec4<f32>(x, y, 0.0, 1.0);
 
     out.instance_coords = in.instance_coords;
-    out.kind = in.kind;
 
     let texture_x = mix(in.texture_uv_min.x, in.texture_uv_max.x, in.vertex_texture_uv.x);
     let texture_y = mix(in.texture_uv_max.y, in.texture_uv_min.y, in.vertex_texture_uv.y); // Yes, this is inverted ZzZ

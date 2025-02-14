@@ -1,7 +1,7 @@
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    pub position: [u32; 2],
+    pub position: [f32; 2],
     pub uv: [f32; 2],
 }
 
@@ -14,7 +14,7 @@ impl Vertex {
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Uint32x2,
+                    format: wgpu::VertexFormat::Float32x2,
                     shader_location: 0,
                     offset: 0,
                 },

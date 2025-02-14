@@ -7,9 +7,8 @@ use crate::{
     game,
     render::{
         self,
-        bind_groups::{
-            camera::CameraBindGroup, screen::ScreenBindGroup, texture::TextureBindGroup,
-        },
+        bind_groups::{camera::CameraBindGroup, texture::TextureBindGroup},
+        device::screen::Screen,
         textures::atlas::TextureAtlas,
         world::WorldRender,
     },
@@ -21,12 +20,11 @@ pub struct State<'a> {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
     pub camera_controller: render::camera::CameraController,
     camera_bind_group: CameraBindGroup,
-    screen_bind_group: ScreenBindGroup,
     texture_bind_group: TextureBindGroup,
     texture_atlas: TextureAtlas,
+    screen: Screen,
 }
 
 impl<'a> State<'a> {
@@ -34,6 +32,7 @@ impl<'a> State<'a> {
         let game = game::Game::new();
 
         let size = window.inner_size();
+        let screen = Screen::new(size.width, size.height);
 
         let instance_desc = wgpu::InstanceDescriptor {
             // the backend that wgpu will use, like Vulkan, Metal, or DX12
@@ -98,7 +97,6 @@ impl<'a> State<'a> {
         let camera_controller = render::camera::CameraController::new();
 
         let camera_bind_group = CameraBindGroup::new(game.camera(), &device);
-        let screen_bind_group = ScreenBindGroup::new(&size, &device);
         let texture_bind_group = TextureBindGroup::new(&device, &queue);
 
         return Self {
@@ -108,22 +106,16 @@ impl<'a> State<'a> {
             device,
             queue,
             config,
-            size,
             camera_bind_group,
-            screen_bind_group,
             texture_bind_group,
             texture_atlas: TextureAtlas::new(),
+            screen,
         };
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
-
-            self.screen_bind_group.write(&self.size, &self.queue);
+    pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
+        if size.width > 0 && size.height > 0 {
+            self.screen.update(size.width, size.height);
         }
     }
 
@@ -146,7 +138,6 @@ impl<'a> State<'a> {
             &self.device,
             &self.config,
             &[
-                self.screen_bind_group.layout(),
                 self.camera_bind_group.layout(),
                 self.texture_bind_group.layout(),
             ],
@@ -202,9 +193,8 @@ impl<'a> State<'a> {
             render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             render_pass.set_vertex_buffer(1, instance_buffer.slice(..));
 
-            render_pass.set_bind_group(0, &self.screen_bind_group.bind_group(), &[]);
-            render_pass.set_bind_group(1, &self.camera_bind_group.bind_group(), &[]);
-            render_pass.set_bind_group(2, &self.texture_bind_group.bind_group(), &[]);
+            render_pass.set_bind_group(0, &self.camera_bind_group.bind_group(), &[]);
+            render_pass.set_bind_group(1, &self.texture_bind_group.bind_group(), &[]);
 
             render_pass.draw(0..vertices.len() as u32, 0..instances.len() as u32);
         }
