@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 use winit::window::Window;
@@ -9,8 +9,8 @@ use crate::{
         self,
         bind_groups::{camera::CameraBindGroup, texture::TextureBindGroup},
         device::screen::Screen,
+        draw::tile::{TileDrawCommand, TileDrawable},
         textures::atlas::TextureAtlas,
-        world::WorldRender,
     },
 };
 
@@ -24,7 +24,7 @@ pub struct State<'a> {
     camera_bind_group: CameraBindGroup,
     texture_bind_group: TextureBindGroup,
     texture_atlas: TextureAtlas,
-    screen: Screen,
+    pub screen: Screen,
 }
 
 impl<'a> State<'a> {
@@ -143,61 +143,70 @@ impl<'a> State<'a> {
             ],
         );
 
-        {
-            let vertices = &render::tiles::TileRender::vertices();
-            let vertex_buffer_desc = wgpu::util::BufferInitDescriptor {
-                label: Some("vertex_buffer"),
-                contents: bytemuck::cast_slice(vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            };
-            let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
+        let mut draw_command = TileDrawCommand::new();
+        let chunks = self.game.world().chunks_vec();
 
-            let world_render = WorldRender::new(
-                self.game.world(),
-                Mutex::new(&mut self.texture_atlas),
-                self.game.camera(),
-            );
-            let instances = world_render.tiles();
+        let vertices = &TileDrawCommand::vertices(&self.screen);
+        let vertex_buffer_desc = wgpu::util::BufferInitDescriptor {
+            label: Some("vertex_buffer"),
+            contents: bytemuck::cast_slice(vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        };
+        let vertex_buffer = self.device.create_buffer_init(&vertex_buffer_desc);
 
-            let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
-                label: Some("instance_buffer"),
-                contents: bytemuck::cast_slice(&instances),
-                usage: wgpu::BufferUsages::VERTEX,
-            };
-            let instance_buffer = self.device.create_buffer_init(&instance_buffer_desc);
+        let color_attachment = wgpu::RenderPassColorAttachment {
+            view: &image_view,
+            resolve_target: None,
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                store: wgpu::StoreOp::Store,
+            },
+        };
 
-            let color_attachment = wgpu::RenderPassColorAttachment {
-                view: &image_view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                    store: wgpu::StoreOp::Store,
-                },
-            };
+        let render_pass_desc = wgpu::RenderPassDescriptor {
+            label: Some("render_pass"),
+            color_attachments: &[Some(color_attachment)],
+            depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        };
 
-            let render_pass_desc = wgpu::RenderPassDescriptor {
-                label: Some("render_pass"),
-                color_attachments: &[Some(color_attachment)],
-                depth_stencil_attachment: None,
-                occlusion_query_set: None,
-                timestamp_writes: None,
-            };
+        for chunk in chunks {
+            for row in chunk.tiles() {
+                for tile in row {
+                    draw_command.add(
+                        0,
+                        TileDrawable::new(tile.as_ref(), self.game.camera(), &self.screen),
+                    );
+                }
+            }
+        }
 
+        for layer in draw_command.layers() {
             // List of render commands in a command encoder. A render pass may contain any number of
             // drawing commands, and before/between each command the render state may be updated
             // however you wish
             let mut render_pass = encoder.begin_render_pass(&render_pass_desc);
 
-            render_pass.set_pipeline(&pipeline);
+            let instance_buffer_desc = wgpu::util::BufferInitDescriptor {
+                label: Some("instance_buffer"),
+                contents: bytemuck::cast_slice(&layer),
+                usage: wgpu::BufferUsages::VERTEX,
+            };
+
+            let instance_buffer = self.device.create_buffer_init(&instance_buffer_desc);
 
             render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             render_pass.set_vertex_buffer(1, instance_buffer.slice(..));
 
+            render_pass.set_pipeline(&pipeline);
+
             render_pass.set_bind_group(0, &self.camera_bind_group.bind_group(), &[]);
             render_pass.set_bind_group(1, &self.texture_bind_group.bind_group(), &[]);
 
-            render_pass.draw(0..vertices.len() as u32, 0..instances.len() as u32);
+            render_pass.draw(0..vertices.len() as u32, 0..layer.len() as u32);
         }
+
         self.queue.submit(std::iter::once(encoder.finish()));
 
         drawable.present();
@@ -242,10 +251,7 @@ fn build_pipeline(
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
-            buffers: &[
-                render::vertex::Vertex::desc(),
-                render::tiles::TileRender::desc(),
-            ],
+            buffers: &[render::vertex::Vertex::desc(), TileDrawCommand::desc()],
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         },
         fragment: Some(wgpu::FragmentState {

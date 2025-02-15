@@ -54,7 +54,12 @@ impl ApplicationHandler<UserEvent> for APP<'_> {
                 let result = state.render();
                 match result {
                     Ok(_) => {}
-                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                    Err(wgpu::SurfaceError::Lost) => {
+                        state.resize(winit::dpi::PhysicalSize::new(
+                            state.screen.width(),
+                            state.screen.height(),
+                        ));
+                    }
                     Err(wgpu::SurfaceError::Timeout) => {}
                     Err(wgpu::SurfaceError::Outdated) => {}
                     Err(wgpu::SurfaceError::OutOfMemory) => std::process::exit(1),

@@ -35,8 +35,7 @@ impl TilesetDict {
     }
 
     pub fn get(&self, tiles: [TileKind; 4]) -> Option<[u32; 2]> {
-        let key = TilesetDict::key_from(tiles);
-        return self.dict.get(&key).copied();
+        return None;
     }
 }
 
