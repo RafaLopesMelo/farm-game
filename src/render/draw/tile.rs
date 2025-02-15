@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    render::{device::screen::Screen, vertex::Vertex},
+    render::{device::screen::Screen, textures::Texture, vertex::Vertex},
     world::{camera::Camera, tiles::Tile},
 };
 
@@ -13,10 +13,11 @@ fn to_ndc(pixels: i32, physical_size: u32) -> f32 {
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TileDrawable {
     position: [f32; 2],
+    texture: Texture,
 }
 
 impl TileDrawable {
-    pub fn new(tile: &dyn Tile, camera: &Camera, screen: &Screen) -> Self {
+    pub fn new(tile: &dyn Tile, camera: &Camera, screen: &Screen, texture: Texture) -> Self {
         let coords = tile.coords();
         let diff = camera.coords.offset(&coords.to_2d());
 
@@ -28,6 +29,7 @@ impl TileDrawable {
                 to_ndc(offset[0], screen.width()),
                 to_ndc(offset[1], screen.height()),
             ],
+            texture,
         };
     }
 
@@ -66,11 +68,24 @@ impl TileDrawCommand {
         return wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<TileDrawable>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Instance,
-            attributes: &[wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x2,
-                shader_location: 2,
-                offset: 0,
-            }],
+            attributes: &[
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    shader_location: 2,
+                    offset: 0,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    shader_location: 3,
+                    offset: std::mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    shader_location: 4,
+                    offset: (std::mem::size_of::<[f32; 2]>() + std::mem::size_of::<[f32; 2]>())
+                        as wgpu::BufferAddress,
+                },
+            ],
         };
     }
 

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use wgpu::util::DeviceExt;
+use wgpu::{core::id::markers::Texture, util::DeviceExt};
 use winit::window::Window;
 
 use crate::{
@@ -171,12 +171,19 @@ impl<'a> State<'a> {
             timestamp_writes: None,
         };
 
+        let default_texture = TextureAtlas::texture_from_coords([0, 0]);
+
         for chunk in chunks {
             for row in chunk.tiles() {
                 for tile in row {
                     draw_command.add(
                         0,
-                        TileDrawable::new(tile.as_ref(), self.game.camera(), &self.screen),
+                        TileDrawable::new(
+                            tile.as_ref(),
+                            self.game.camera(),
+                            &self.screen,
+                            default_texture.clone(),
+                        ),
                     );
                 }
             }
