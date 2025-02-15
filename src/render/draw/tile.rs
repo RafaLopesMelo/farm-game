@@ -51,12 +51,12 @@ impl TileDrawCommand {
         };
     }
 
-    pub fn add(&mut self, layer: u32, drawable: TileDrawable) {
+    pub fn add(&mut self, layer: u32, drawables: Vec<TileDrawable>) {
         if !self.drawables.contains_key(&layer) {
             self.drawables.insert(layer, Vec::new());
         }
 
-        self.drawables.get_mut(&layer).unwrap().push(drawable);
+        self.drawables.get_mut(&layer).unwrap().extend(drawables);
     }
 
     pub fn layers(&self) -> Vec<&Vec<TileDrawable>> {

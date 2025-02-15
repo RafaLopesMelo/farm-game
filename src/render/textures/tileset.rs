@@ -34,7 +34,7 @@ impl TilesetDict {
         return arr.join("_");
     }
 
-    pub fn get(&self, tiles: [TileKind; 4]) -> Option<[u32; 2]> {
+    pub fn get(&self, tiles: [TileKind; 4]) -> Option<Vec<Vec<[u32; 2]>>> {
         return None;
     }
 }

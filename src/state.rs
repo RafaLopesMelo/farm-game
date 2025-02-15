@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use wgpu::{core::id::markers::Texture, util::DeviceExt};
+use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::{
@@ -144,7 +144,6 @@ impl<'a> State<'a> {
         );
 
         let mut draw_command = TileDrawCommand::new();
-        let chunks = self.game.world().chunks_vec();
 
         let vertices = &TileDrawCommand::vertices(&self.screen);
         let vertex_buffer_desc = wgpu::util::BufferInitDescriptor {
@@ -171,20 +170,30 @@ impl<'a> State<'a> {
             timestamp_writes: None,
         };
 
-        let default_texture = TextureAtlas::texture_from_coords([0, 0]);
-
+        let chunks = self.game.world().chunks_vec();
         for chunk in chunks {
             for row in chunk.tiles() {
                 for tile in row {
-                    draw_command.add(
-                        0,
-                        TileDrawable::new(
-                            tile.as_ref(),
-                            self.game.camera(),
-                            &self.screen,
-                            default_texture.clone(),
-                        ),
-                    );
+                    let layers = self
+                        .texture_atlas
+                        .textures_for_tile(tile.as_ref(), self.game.world());
+
+                    for layer in layers {
+                        draw_command.add(
+                            0,
+                            layer
+                                .iter()
+                                .map(|texture| {
+                                    TileDrawable::new(
+                                        tile.as_ref(),
+                                        self.game.camera(),
+                                        &self.screen,
+                                        texture.clone(),
+                                    )
+                                })
+                                .collect::<Vec<TileDrawable>>(),
+                        );
+                    }
                 }
             }
         }

@@ -10,7 +10,7 @@ use super::{tileset::TilesetDict, Texture};
 
 pub struct TextureAtlas {
     dict: TilesetDict,
-    cache: HashMap<Coords3D, Texture>,
+    cache: HashMap<Coords3D, Vec<Vec<Texture>>>,
 }
 
 impl TextureAtlas {
@@ -24,11 +24,17 @@ impl TextureAtlas {
         };
     }
 
-    pub fn cached_texture(&self, tile: &dyn Tile) -> Option<Texture> {
-        return self.cache.get(&tile.coords()).cloned();
-    }
+    pub fn textures_for_tile(
+        &mut self,
+        tile: &dyn Tile,
+        world: &dyn TileLocator,
+    ) -> Vec<Vec<Texture>> {
+        let cached = self.cache.get(&tile.coords());
 
-    pub fn texture_for_tile(&mut self, tile: &dyn Tile, world: &dyn TileLocator) -> Texture {
+        if cached.is_some() {
+            return cached.unwrap().clone();
+        }
+
         let default = Self::texture_from_coords([0, 0]);
 
         let coords = tile.coords();
@@ -40,24 +46,33 @@ impl TextureAtlas {
         let bl = world.tile_at(Coords2D::new(offset.x() - 0.5, offset.y() - 0.5));
 
         if tr.is_none() || tl.is_none() || br.is_none() || bl.is_none() {
-            return default;
+            return vec![vec![default]];
         }
 
-        let t = self.dict.get([
+        let layers = self.dict.get([
             tr.unwrap().kind(),
             tl.unwrap().kind(),
             br.unwrap().kind(),
             bl.unwrap().kind(),
         ]);
 
-        if t.is_none() {
-            return default;
+        if layers.is_none() {
+            return vec![vec![default]];
         }
 
-        let texture = TextureAtlas::texture_from_coords(t.unwrap());
-        self.cache.insert(tile.coords().clone(), texture);
+        let textures: Vec<Vec<Texture>> = layers
+            .unwrap()
+            .iter()
+            .map(|layer| {
+                return layer
+                    .iter()
+                    .map(|texture| return TextureAtlas::texture_from_coords(*texture))
+                    .collect();
+            })
+            .collect();
 
-        return texture;
+        self.cache.insert(tile.coords().clone(), textures.clone());
+        return textures;
     }
 
     pub fn texture_from_coords(coords: [u32; 2]) -> Texture {
