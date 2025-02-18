@@ -35,7 +35,7 @@ impl TileDrawable {
 
     /// Returns the size of each tile in pixels
     pub fn size() -> u32 {
-        let size: u32 = 64;
+        let size: u32 = 128;
         return size;
     }
 }

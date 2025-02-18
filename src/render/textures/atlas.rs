@@ -51,9 +51,9 @@ impl TextureAtlas {
 
         let layers = self.dict.get([
             tr.unwrap().kind(),
-            tl.unwrap().kind(),
             br.unwrap().kind(),
             bl.unwrap().kind(),
+            tl.unwrap().kind(),
         ]);
 
         if layers.is_none() {
