@@ -23,6 +23,10 @@ impl CameraBindGroup {
         return &self.layout;
     }
 
+    pub fn buffer(&self) -> &wgpu::Buffer {
+        return &self.buffer;
+    }
+
     pub fn write(&mut self, camera: &Camera, queue: &wgpu::Queue) {
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[camera.to_array()]));
     }

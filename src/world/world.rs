@@ -51,9 +51,6 @@ impl World {
             for y in bottom..top {
                 let already_loaded = self.chunk_at(Coords2D::new_lattice(x * cs, y * cs));
                 if already_loaded.is_some() {
-                    println!("Already loaded");
-                }
-                if already_loaded.is_some() {
                     continue;
                 }
 

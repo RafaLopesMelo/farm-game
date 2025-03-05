@@ -63,6 +63,7 @@ impl ApplicationHandler<UserEvent> for APP<'_> {
                     Err(wgpu::SurfaceError::Timeout) => {}
                     Err(wgpu::SurfaceError::Outdated) => {}
                     Err(wgpu::SurfaceError::OutOfMemory) => std::process::exit(1),
+                    Err(wgpu::SurfaceError::Other) => std::process::exit(1),
                 }
             }
             _ => {

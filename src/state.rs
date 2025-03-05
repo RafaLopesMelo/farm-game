@@ -41,7 +41,7 @@ impl<'a> State<'a> {
         };
 
         // WGPU lib entry point, first thing to do when using wgpu
-        let instance = wgpu::Instance::new(instance_desc);
+        let instance = wgpu::Instance::new(&instance_desc);
 
         // Presentable surface, used to draw to the screen. eg: window
         let surface = instance.create_surface(window).unwrap();
@@ -217,8 +217,8 @@ impl<'a> State<'a> {
 
             render_pass.set_pipeline(&pipeline);
 
-            render_pass.set_bind_group(0, &self.camera_bind_group.bind_group(), &[]);
-            render_pass.set_bind_group(1, &self.texture_bind_group.bind_group(), &[]);
+            render_pass.set_bind_group(0, self.camera_bind_group.bind_group(), &[]);
+            render_pass.set_bind_group(1, self.texture_bind_group.bind_group(), &[]);
 
             render_pass.draw(0..vertices.len() as u32, 0..layer.len() as u32);
         }
@@ -266,13 +266,13 @@ fn build_pipeline(
         layout: Some(&layout),
         vertex: wgpu::VertexState {
             module: &shader,
-            entry_point: "vs_main",
+            entry_point: Some("vs_main"),
             buffers: &[render::vertex::Vertex::desc(), TileDrawCommand::desc()],
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
-            entry_point: "fs_main",
+            entry_point: Some("fs_main"),
             targets: color_state,
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         }),

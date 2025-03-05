@@ -9,7 +9,7 @@ pub mod dirt;
 pub mod grass;
 pub mod water;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TileKind {
     Dirt = 0,
     Grass = 1,

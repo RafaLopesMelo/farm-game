@@ -34,7 +34,7 @@ impl PlainsBiome {
         let c = Coords3D::new_lattice(coords.lattice_x(), coords.lattice_y(), height);
 
         if noise <= -0.4 {
-            return Box::new(WaterTile::new(c)) as Box<dyn Tile>;
+            return Box::new(DirtTile::new(c)) as Box<dyn Tile>; // TODO: Should be water
         }
 
         if noise > 0.1 && noise <= 0.15 || noise > -0.15 && noise <= -0.1 {
