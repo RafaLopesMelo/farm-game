@@ -24,66 +24,6 @@ impl TilesetDict {
     pub fn new() -> Self {
         let mut h = HashMap::new();
 
-        h.insert(
-            TilesetDict::key_from([
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-            ]),
-            TextureLayers::new().add(0, [2, 2]).add(1, [0, 0]).clone(),
-        );
-
-        h.insert(
-            TilesetDict::key_from([
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Dirt),
-            ]),
-            TextureLayers::new().add(0, [5, 1]).add(1, [4, 2]).clone(),
-        );
-
-        h.insert(
-            TilesetDict::key_from([
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Dirt),
-            ]),
-            TextureLayers::new().add(0, [6, 0]).add(1, [6, 1]).clone(),
-        );
-
-        h.insert(
-            TilesetDict::key_from([
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Grass),
-            ]),
-            TextureLayers::new().add(0, [7, 0]).add(1, [7, 1]).clone(),
-        );
-
-        h.insert(
-            TilesetDict::key_from([
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Grass),
-            ]),
-            TextureLayers::new().add(0, [2, 8]).add(1, [8, 0]).clone(),
-        );
-
-        h.insert(
-            TilesetDict::key_from([
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-                TileSlot::Specific(TileKind::Grass),
-                TileSlot::Specific(TileKind::Dirt),
-            ]),
-            TextureLayers::new().add(0, [2, 1]).add(1, [5, 2]).clone(),
-        );
-
         TilesetDict::setup_dirt_wildcards(&mut h);
         TilesetDict::setup_grass_wildcards(&mut h);
 
@@ -180,6 +120,66 @@ impl TilesetDict {
             ]),
             TextureLayers::new().add(0, [4, 0]).clone(),
         );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+            ]),
+            TextureLayers::new().add(0, [2, 1]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Any,
+            ]),
+            TextureLayers::new().add(0, [7, 0]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Any,
+            ]),
+            TextureLayers::new().add(0, [2, 8]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Specific(TileKind::Dirt),
+            ]),
+            TextureLayers::new().add(0, [6, 0]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Specific(TileKind::Dirt),
+            ]),
+            TextureLayers::new().add(0, [5, 1]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Specific(TileKind::Dirt),
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Dirt),
+            ]),
+            TextureLayers::new().add(0, [2, 2]).clone(),
+        );
     }
 
     fn setup_grass_wildcards(h: &mut HashMap<String, TextureLayers>) {
@@ -271,6 +271,66 @@ impl TilesetDict {
                 TileSlot::Any,
             ]),
             TextureLayers::new().add(1, [9, 0]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+            ]),
+            TextureLayers::new().add(1, [5, 2]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Grass),
+            ]),
+            TextureLayers::new().add(1, [8, 0]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Grass),
+            ]),
+            TextureLayers::new().add(1, [7, 1]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+                TileSlot::Any,
+                TileSlot::Any,
+            ]),
+            TextureLayers::new().add(1, [6, 1]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+                TileSlot::Any,
+            ]),
+            TextureLayers::new().add(1, [4, 2]).clone(),
+        );
+
+        h.insert(
+            TilesetDict::key_from([
+                TileSlot::Any,
+                TileSlot::Any,
+                TileSlot::Specific(TileKind::Grass),
+                TileSlot::Any,
+            ]),
+            TextureLayers::new().add(1, [0, 0]).clone(),
         );
     }
 
