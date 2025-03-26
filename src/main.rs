@@ -5,9 +5,8 @@ mod render;
 mod state;
 mod world;
 
-use internal::window::Window;
+use internal::app::App;
 
 fn main() {
-    let mut window = Window::new();
-    window.run();
+    App::new().run();
 }
