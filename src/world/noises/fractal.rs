@@ -17,7 +17,7 @@ impl FractalNoise {
         &self,
         coords: Coords2D,
         desc: &FractalNoiseGenerationDescriptor,
-        cache: Option<&NoiseCache>,
+        _cache: Option<&NoiseCache>,
     ) -> f32 {
         let mut noise = 0.0;
         let mut amplitude = 1.0;

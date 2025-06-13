@@ -1,27 +1,10 @@
-pub struct TextureBindGroup {
+pub struct Texture {
     bg: wgpu::BindGroup,
-    layout: wgpu::BindGroupLayout,
+    bg_layout: wgpu::BindGroupLayout,
 }
 
-impl TextureBindGroup {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
-        let (bg, layout) = Self::build(device, queue);
-        return Self { bg, layout };
-    }
-
-    pub fn layout(&self) -> &wgpu::BindGroupLayout {
-        return &self.layout;
-    }
-
-    pub fn bind_group(&self) -> &wgpu::BindGroup {
-        return &self.bg;
-    }
-
-    fn build(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
-        let buffer = include_bytes!("../../../assets/tileset.png");
+impl Texture {
+    pub fn new(name: &str, buffer: &[u8; 0], device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
         let img = image::load_from_memory(buffer).unwrap();
         let rgba = img.to_rgba8();
 
@@ -41,7 +24,7 @@ impl TextureBindGroup {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            label: Some("grass_texture"),
+            label: Some(name),
             view_formats: &[],
         };
 
@@ -57,7 +40,7 @@ impl TextureBindGroup {
             &rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * dimensions.0), // 4 bytes per pixel
+                bytes_per_row: Some(4 * dimensions.0), // 4 bytes per pixel (RGBA)
                 rows_per_image: Some(dimensions.1),
             },
             size,
@@ -115,6 +98,10 @@ impl TextureBindGroup {
         };
 
         let bind_group = device.create_bind_group(&bind_group_desc);
-        return (bind_group, bind_group_layout);
+
+        return Self {
+            bg: bind_group,
+            bg_layout: bind_group_layout,
+        };
     }
 }

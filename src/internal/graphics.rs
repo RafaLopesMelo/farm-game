@@ -1,16 +1,22 @@
-use crate::render::{self, draw::tile::TileDrawCommand};
+mod assets;
+mod pipeline;
+mod sprite;
+mod texture;
+
+use std::collections::HashMap;
 
 use super::window::Window;
-use wgpu::util::DeviceExt;
+use assets::AssetsManager;
+use pipeline::RenderPipeline;
 
-pub struct Graphics {
+struct GraphicsInternal {
     surface: wgpu::Surface<'static>,
+    config: wgpu::SurfaceConfiguration,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    config: wgpu::SurfaceConfiguration,
 }
 
-impl Graphics {
+impl GraphicsInternal {
     pub fn new(window: &Window) -> Self {
         let instance_desc = wgpu::InstanceDescriptor {
             // the backend that wgpu will use, like Vulkan, Metal, or DX12
@@ -38,12 +44,12 @@ impl Graphics {
             required_features: wgpu::Features::empty(),
             required_limits: wgpu::Limits::default(),
             memory_hints: wgpu::MemoryHints::default(),
+            trace: wgpu::Trace::Off,
         };
 
         // Device - connection to a graphic device
         // Queue - Handle to command queue on a device
-        let (device, queue) =
-            pollster::block_on(adapter.request_device(&device_desc, None)).unwrap();
+        let (device, queue) = pollster::block_on(adapter.request_device(&device_desc)).unwrap();
 
         let surface_capabilities = surface.get_capabilities(&adapter);
 
@@ -81,10 +87,37 @@ impl Graphics {
             queue,
         };
     }
+}
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+pub struct Graphics {
+    internal: Option<GraphicsInternal>,
+    assets_manager: AssetsManager,
+    pipelines: HashMap<String, Box<dyn RenderPipeline>>,
+}
+
+impl Graphics {
+    pub fn new() -> Self {
+        return Self {
+            internal: None,
+            assets_manager: AssetsManager::new(),
+            pipelines: HashMap::new(),
+        };
+    }
+
+    pub fn run(&mut self, window: &Window) {
+        let internal = Some(GraphicsInternal::new(window));
+        self.internal = internal;
+    }
+
+    pub fn render(&mut self) {
+        if self.internal.is_none() {
+            panic!("Graphics not initialized");
+        }
+
+        let internal = self.internal.as_ref().unwrap();
+
         // The next texture to be presented to the surface
-        let drawable = self.surface.get_current_texture()?;
+        let drawable = internal.surface.get_current_texture().unwrap();
         let image_view_desc = wgpu::TextureViewDescriptor::default();
         let image_view = drawable.texture.create_view(&image_view_desc);
 
@@ -95,9 +128,7 @@ impl Graphics {
         // Encodes GPU operations. Can record RenderPass and ComputePass, and transfer operations
         // between driver-managed resources like Buffers and Textures
         // When finished recording, call `finish()` obtain a `CommandBuffer` that can be submitted to the queue
-        let mut encoder = self.device.create_command_encoder(&encoder_desc);
-
-        let pipeline = build_pipeline(&self.device, &self.config, &[]);
+        let mut encoder = internal.device.create_command_encoder(&encoder_desc);
 
         let color_attachment = wgpu::RenderPassColorAttachment {
             view: &image_view,
@@ -118,78 +149,92 @@ impl Graphics {
 
         {
             let mut render_pass = encoder.begin_render_pass(&render_pass_desc);
-            render_pass.set_pipeline(&pipeline);
-            render_pass.draw(0..0, 0..0);
+
+            for pipeline in self.pipelines.values() {
+                pipeline.render(&mut render_pass);
+            }
         }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        internal.queue.submit(std::iter::once(encoder.finish()));
 
         drawable.present();
+    }
 
-        return Ok(());
+    pub fn add_pipeline(&mut self, name: &str, pipeline: Box<dyn RenderPipeline>) {
+        self.pipelines.insert(name.to_string(), pipeline);
     }
 }
 
-fn build_pipeline(
-    device: &wgpu::Device,
-    config: &wgpu::SurfaceConfiguration,
-    bind_groups_layouts: &[&wgpu::BindGroupLayout],
-) -> wgpu::RenderPipeline {
-    let shader_desc = wgpu::include_wgsl!("../shaders/tile.wgsl");
-    let shader = device.create_shader_module(shader_desc);
+// fn build_pipeline(
+//     device: &wgpu::Device,
+//     config: &wgpu::SurfaceConfiguration,
+//     bind_groups_layouts: &[&wgpu::BindGroupLayout],
+// ) -> wgpu::RenderPipeline {
+//     let shader_desc = wgpu::include_wgsl!("../shaders/tile.wgsl");
+//     let shader = device.create_shader_module(shader_desc);
+//
+//     let layout_desc = wgpu::PipelineLayoutDescriptor {
+//         label: Some("pipeline_layout"),
+//         bind_group_layouts: bind_groups_layouts,
+//         push_constant_ranges: &[],
+//     };
+//
+//     let layout = device.create_pipeline_layout(&layout_desc);
+//
+//     let color_state = &[Some(wgpu::ColorTargetState {
+//         format: config.format,
+//         blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+//         write_mask: wgpu::ColorWrites::ALL,
+//     })];
+//
+//     let desc = wgpu::RenderPipelineDescriptor {
+//         label: Some("pipeline"),
+//         layout: Some(&layout),
+//         vertex: wgpu::VertexState {
+//             module: &shader,
+//             entry_point: Some("vs_main"),
+//             buffers: &[render::vertex::Vertex::desc(), TileDrawCommand::desc()],
+//             compilation_options: wgpu::PipelineCompilationOptions::default(),
+//         },
+//         fragment: Some(wgpu::FragmentState {
+//             module: &shader,
+//             entry_point: Some("fs_main"),
+//             targets: color_state,
+//             compilation_options: wgpu::PipelineCompilationOptions::default(),
+//         }),
+//         primitive: wgpu::PrimitiveState {
+//             // How to interpret the vertices. Here each set of 3 vertices composes a new triangle
+//             topology: wgpu::PrimitiveTopology::TriangleList,
+//             strip_index_format: None,
+//             // Triangles drawn in clockwise order is considered to be front-facing. So is not discarded by the culling
+//             front_face: wgpu::FrontFace::Ccw,
+//             // Determines whether certain faces of 3D objects should be rendered or discarded.
+//             cull_mode: None,
+//             polygon_mode: wgpu::PolygonMode::Fill,
+//             unclipped_depth: false,
+//             conservative: false,
+//         },
+//         depth_stencil: None,
+//         // Is used to avoid aliasing
+//         multisample: wgpu::MultisampleState {
+//             count: 1,
+//             mask: !0,
+//             alpha_to_coverage_enabled: false,
+//         },
+//         multiview: None,
+//         cache: None,
+//     };
+//
+//     let pipeline = device.create_render_pipeline(&desc);
+//     return pipeline;
+// }
 
-    let layout_desc = wgpu::PipelineLayoutDescriptor {
-        label: Some("pipeline_layout"),
-        bind_group_layouts: bind_groups_layouts,
-        push_constant_ranges: &[],
-    };
+pub struct GraphicsAPI<'a> {
+    instance: &'a Graphics,
+}
 
-    let layout = device.create_pipeline_layout(&layout_desc);
-
-    let color_state = &[Some(wgpu::ColorTargetState {
-        format: config.format,
-        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-        write_mask: wgpu::ColorWrites::ALL,
-    })];
-
-    let desc = wgpu::RenderPipelineDescriptor {
-        label: Some("pipeline"),
-        layout: Some(&layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: Some("vs_main"),
-            buffers: &[render::vertex::Vertex::desc(), TileDrawCommand::desc()],
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: Some("fs_main"),
-            targets: color_state,
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        }),
-        primitive: wgpu::PrimitiveState {
-            // How to interpret the vertices. Here each set of 3 vertices composes a new triangle
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            // Triangles drawn in clockwise order is considered to be front-facing. So is not discarded by the culling
-            front_face: wgpu::FrontFace::Ccw,
-            // Determines whether certain faces of 3D objects should be rendered or discarded.
-            cull_mode: None,
-            polygon_mode: wgpu::PolygonMode::Fill,
-            unclipped_depth: false,
-            conservative: false,
-        },
-        depth_stencil: None,
-        // Is used to avoid aliasing
-        multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-        cache: None,
-    };
-
-    let pipeline = device.create_render_pipeline(&desc);
-    return pipeline;
+impl<'a> GraphicsAPI<'a> {
+    pub fn with(i: &'a Graphics) -> GraphicsAPI<'a> {
+        return Self { instance: i };
+    }
 }

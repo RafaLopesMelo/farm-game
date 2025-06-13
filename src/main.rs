@@ -1,12 +1,13 @@
-mod app;
-mod game;
 mod internal;
-mod render;
-mod state;
-mod world;
 
-use internal::app::App;
+use internal::engine::Engine;
 
 fn main() {
-    App::new().run();
+    println!("123");
+    Engine::new().run();
+    println!("321");
 }
+
+struct FakeRenderPipeline {}
+
+impl FakeRenderPipeline {}

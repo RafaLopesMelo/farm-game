@@ -40,7 +40,7 @@ enum InternalWindowEvent {
     Tick,
 }
 pub struct Window {
-    runnning: bool,
+    running: bool,
     instance: Option<Arc<WinitWindow>>,
     size: PhysicalSize,
 }
@@ -48,7 +48,7 @@ pub struct Window {
 impl Window {
     pub fn new() -> Self {
         return Self {
-            runnning: false,
+            running: false,
             instance: None,
             size: PhysicalSize::default(),
         };
@@ -83,7 +83,7 @@ impl Window {
     }
 
     pub fn running(&self) -> bool {
-        return self.runnning;
+        return self.running;
     }
 }
 
@@ -93,7 +93,7 @@ impl ApplicationHandler<InternalWindowEvent> for Window {
         let w = event_loop.create_window(attr).unwrap();
         self.instance = Some(Arc::new(w));
 
-        self.runnning = true;
+        self.running = true;
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: InternalWindowEvent) {

@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use wgpu::util::DeviceExt;
-use winit::window::Window;
 
 use crate::{
     game,
@@ -28,92 +25,7 @@ pub struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    pub async fn new(window: Arc<Window>) -> Self {
-        let game = game::Game::new();
-
-        let size = window.inner_size();
-        let screen = Screen::new(size.width, size.height);
-
-        let instance_desc = wgpu::InstanceDescriptor {
-            // the backend that wgpu will use, like Vulkan, Metal, or DX12
-            backends: wgpu::Backends::PRIMARY,
-            ..Default::default()
-        };
-
-        // WGPU lib entry point, first thing to do when using wgpu
-        let instance = wgpu::Instance::new(&instance_desc);
-
-        // Presentable surface, used to draw to the screen. eg: window
-        let surface = instance.create_surface(window).unwrap();
-
-        let adapter_desc = wgpu::RequestAdapterOptionsBase {
-            power_preference: wgpu::PowerPreference::default(),
-            compatible_surface: Some(&surface),
-            force_fallback_adapter: false,
-        };
-
-        // Handle to a physical graphics. Used to connect to device
-        let adapter = instance.request_adapter(&adapter_desc).await.unwrap();
-
-        let device_desc = wgpu::DeviceDescriptor {
-            label: Some("device"),
-            required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::default(),
-            memory_hints: wgpu::MemoryHints::default(),
-        };
-
-        // Device - connection to a graphic device
-        // Queue - Handle to command queue on a device
-        let (device, queue) = adapter.request_device(&device_desc, None).await.unwrap();
-
-        let surface_capabilities = surface.get_capabilities(&adapter);
-
-        // List of supported formats to use in adapter. The first item is preferred. Here we get
-        // the first SRGB format.
-        let surface_format = surface_capabilities
-            .formats
-            .iter()
-            .copied()
-            .filter(|f| f.is_srgb())
-            .next()
-            .unwrap();
-
-        let config = wgpu::SurfaceConfiguration {
-            // Only usage supported for surface
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface_format,
-            width: size.width,
-            height: size.height,
-            present_mode: surface_capabilities.present_modes[0],
-            alpha_mode: surface_capabilities.alpha_modes[0],
-            view_formats: vec![],
-            // Desired maximum number of frames that presentation engine should enqueue in advance
-            // Typical values range from 3 to 1, but higher values can be used
-            desired_maximum_frame_latency: 2,
-        };
-
-        surface.configure(&device, &config);
-
-        let camera_controller = render::camera::CameraController::new();
-
-        let camera_bind_group = CameraBindGroup::new(game.camera(), &device);
-        let texture_bind_group = TextureBindGroup::new(&device, &queue);
-
-        return Self {
-            game,
-            camera_controller,
-            surface,
-            device,
-            queue,
-            config,
-            camera_bind_group,
-            texture_bind_group,
-            texture_atlas: TextureAtlas::new(),
-            screen,
-        };
-    }
-
-    pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
         if size.width > 0 && size.height > 0 {
             self.screen.update(size.width, size.height);
         }
