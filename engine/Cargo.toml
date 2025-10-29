@@ -3,6 +3,10 @@ name = "engine"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["rlib"]
+
 [dependencies]
+pollster = "0.4.0"
 wgpu = "26.0.1"
 winit = "0.30.12"
