@@ -4,6 +4,7 @@ use crate::app::App;
 
 mod app;
 mod state;
+mod texture;
 mod window;
 
 #[repr(C)]
