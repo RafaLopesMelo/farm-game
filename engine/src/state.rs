@@ -110,8 +110,12 @@ impl State {
             return Ok(());
         }
 
-        self.renderer_2d
-            .render(&self.device, &self.queue, &self.surface);
+        let output = self.surface.get_current_texture().unwrap();
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        self.renderer_2d.render(&self.device, &self.queue, &view);
 
         return Ok(());
     }

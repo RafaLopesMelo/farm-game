@@ -126,12 +126,7 @@ impl Renderer2D {
         };
     }
 
-    pub fn render(&self, device: &wgpu::Device, queue: &wgpu::Queue, surface: &wgpu::Surface) {
-        let output = surface.get_current_texture().unwrap();
-        let view = output
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
+    pub fn render(&self, device: &wgpu::Device, queue: &wgpu::Queue, view: &wgpu::TextureView) {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("RENDER_ENCODER"),
         });
