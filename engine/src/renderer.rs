@@ -6,14 +6,17 @@ use crate::Vertex;
 pub struct Renderer2D {
     pipeline: wgpu::RenderPipeline,
     texture_bind_group: wgpu::BindGroup,
+    camera_bind_group: wgpu::BindGroup,
 
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
 }
 
-pub struct Renderer2DConfig {
-    pub texture: crate::texture::Texture,
+pub struct Renderer2DConfig<'a> {
+    pub texture: &'a crate::texture::Texture,
     pub texture_format: TextureFormat,
+
+    pub camera: &'a crate::camera::Camera2D,
 }
 
 impl Renderer2D {
@@ -61,9 +64,42 @@ impl Renderer2D {
             ],
         });
 
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: wgpu::BufferSize::new(std::mem::size_of::<
+                            crate::camera::CameraUniform,
+                        >() as u64),
+                    },
+                    count: None,
+                }],
+                label: Some("CAMERA_BIND_GROUP_LAYOUT"),
+            });
+
+        let camera_uniform = crate::camera::CameraUniform::from_camera(&config.camera);
+        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("CAMERA_BUFFER_UNIFORM"),
+            contents: bytemuck::bytes_of(&camera_uniform),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("CAMERA_BIND_GROUP"),
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+        });
+
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("RENDER_PIPELINE_LAYOUT"),
-            bind_group_layouts: &[&texture_bind_group_layout],
+            bind_group_layouts: &[&camera_bind_group_layout, &texture_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -120,6 +156,7 @@ impl Renderer2D {
         return Self {
             pipeline,
             texture_bind_group,
+            camera_bind_group,
 
             index_buffer,
             vertex_buffer,
@@ -156,7 +193,8 @@ impl Renderer2D {
             let num_indices = crate::INDICES.len() as u32;
 
             render_pass.set_pipeline(&self.pipeline);
-            render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
+            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
@@ -164,6 +202,5 @@ impl Renderer2D {
         }
 
         queue.submit(std::iter::once(encoder.finish()));
-        output.present();
     }
 }

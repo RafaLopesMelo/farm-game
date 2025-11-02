@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use wgpu::util::DeviceExt;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::{texture::Texture, INDICES};
+use crate::texture::Texture;
 
 pub struct State {
     surface: wgpu::Surface<'static>,
@@ -15,7 +14,8 @@ pub struct State {
 
     pub window: Arc<Window>,
 
-    renderer_2d: crate::renderer::Renderer2D,
+    renderer: crate::renderer::Renderer2D,
+    camera: crate::camera::Camera2D,
 }
 
 impl State {
@@ -72,11 +72,19 @@ impl State {
         let diffuse_texture =
             Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
 
-        let renderer_2d = crate::renderer::Renderer2D::new(
+        let camera = crate::camera::Camera2D::new(crate::camera::Camera2DConfig {
+            position: glam::Vec2::new(0.0, 0.0),
+            zoom: 1.0,
+            viewport_size: glam::Vec2::new(size.width as f32, size.height as f32),
+        });
+
+        let renderer = crate::renderer::Renderer2D::new(
             &device,
             crate::renderer::Renderer2DConfig {
-                texture: diffuse_texture,
+                texture: &diffuse_texture,
                 texture_format: config.format,
+
+                camera: &camera,
             },
         );
 
@@ -87,8 +95,10 @@ impl State {
             config,
             window,
 
-            renderer_2d,
             is_surface_configured: false,
+
+            renderer,
+            camera,
         });
     }
 
@@ -115,7 +125,9 @@ impl State {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        self.renderer_2d.render(&self.device, &self.queue, &view);
+        self.renderer.render(&self.device, &self.queue, &view);
+
+        output.present();
 
         return Ok(());
     }
