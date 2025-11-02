@@ -2,6 +2,7 @@ use glam::Mat4;
 
 const MIN_ZOOM: f32 = 0.5;
 const MAX_ZOOM: f32 = 2.0;
+const ZOOM_SPEED: f32 = 0.1;
 
 pub struct Camera2D {
     position: glam::Vec2,
@@ -28,7 +29,8 @@ impl Camera2D {
         self.viewport_size = glam::Vec2::new(width, height);
     }
 
-    pub fn zoom_by(&mut self, factor: f32) {
+    pub fn zoom_by(&mut self, delta: f32) {
+        let factor = (1.0 + ZOOM_SPEED).powf(delta);
         self.set_zoom(self.zoom * factor);
     }
 

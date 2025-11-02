@@ -141,4 +141,8 @@ impl State {
             _ => {}
         }
     }
+
+    pub fn handle_wheel(&mut self, delta: f32) {
+        self.camera.zoom_by(delta);
+    }
 }
