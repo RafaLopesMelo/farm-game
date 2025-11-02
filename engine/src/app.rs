@@ -10,6 +10,9 @@ use winit::{
 
 use crate::state::State;
 
+const PIXELS_PER_LINE: f32 = 120.0;
+const MAX_SCROLL_LINES: f32 = 3.0;
+
 pub struct App {
     state: Option<State>,
 }
@@ -70,12 +73,17 @@ impl ApplicationHandler<State> for App {
                 ..
             } => state.handle_key(event_loop, code, key_state.is_pressed()),
             WindowEvent::MouseWheel { delta, .. } => {
-                let scroll = match delta {
+                let normalized_lines = match delta {
                     winit::event::MouseScrollDelta::LineDelta(_, y) => y,
-                    winit::event::MouseScrollDelta::PixelDelta(pos) => pos.y as f32,
+                    winit::event::MouseScrollDelta::PixelDelta(pos) => {
+                        // Convert pixel delta into approximate "line" units to keep zoom speed stable.
+                        (pos.y as f32 / PIXELS_PER_LINE).clamp(-1.0, 1.0)
+                    }
                 };
 
-                state.handle_wheel(scroll);
+                let clamped = normalized_lines.clamp(-MAX_SCROLL_LINES, MAX_SCROLL_LINES);
+
+                state.handle_wheel(clamped);
             }
             _ => {}
         }
