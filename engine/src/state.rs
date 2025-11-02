@@ -108,6 +108,8 @@ impl State {
             self.config.height = height;
             self.surface.configure(&self.device, &self.config);
             self.is_surface_configured = true;
+
+            self.camera.resize(width as f32, height as f32);
         }
     }
 
@@ -125,7 +127,8 @@ impl State {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        self.renderer.render(&self.device, &self.queue, &view);
+        self.renderer
+            .render(&self.device, &self.queue, &view, &self.camera);
 
         output.present();
 

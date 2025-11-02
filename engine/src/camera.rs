@@ -25,7 +25,7 @@ impl Camera2D {
     }
 
     pub fn resize(&mut self, width: f32, height: f32) {
-        self.position = glam::Vec2::new(width, height);
+        self.viewport_size = glam::Vec2::new(width, height);
     }
 
     pub fn zoom_by(&mut self, factor: f32) {

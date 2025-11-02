@@ -6,7 +6,9 @@ use crate::Vertex;
 pub struct Renderer2D {
     pipeline: wgpu::RenderPipeline,
     texture_bind_group: wgpu::BindGroup,
+
     camera_bind_group: wgpu::BindGroup,
+    camera_buffer: wgpu::Buffer,
 
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -64,6 +66,13 @@ impl Renderer2D {
             ],
         });
 
+        let camera_uniform = crate::camera::CameraUniform::from_camera(&config.camera);
+        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("CAMERA_BUFFER_UNIFORM"),
+            contents: bytemuck::bytes_of(&camera_uniform),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
         let camera_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[wgpu::BindGroupLayoutEntry {
@@ -80,13 +89,6 @@ impl Renderer2D {
                 }],
                 label: Some("CAMERA_BIND_GROUP_LAYOUT"),
             });
-
-        let camera_uniform = crate::camera::CameraUniform::from_camera(&config.camera);
-        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("CAMERA_BUFFER_UNIFORM"),
-            contents: bytemuck::bytes_of(&camera_uniform),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
 
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("CAMERA_BIND_GROUP"),
@@ -156,14 +158,24 @@ impl Renderer2D {
         return Self {
             pipeline,
             texture_bind_group,
+
             camera_bind_group,
+            camera_buffer,
 
             index_buffer,
             vertex_buffer,
         };
     }
 
-    pub fn render(&self, device: &wgpu::Device, queue: &wgpu::Queue, view: &wgpu::TextureView) {
+    pub fn render(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        view: &wgpu::TextureView,
+        camera: &crate::camera::Camera2D,
+    ) {
+        self.write_camera_uniform(queue, camera);
+
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("RENDER_ENCODER"),
         });
@@ -202,5 +214,10 @@ impl Renderer2D {
         }
 
         queue.submit(std::iter::once(encoder.finish()));
+    }
+
+    fn write_camera_uniform(&self, queue: &wgpu::Queue, camera: &crate::camera::Camera2D) {
+        let uniform = crate::camera::CameraUniform::from_camera(camera);
+        queue.write_buffer(&self.camera_buffer, 0, bytemuck::bytes_of(&uniform));
     }
 }
