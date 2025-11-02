@@ -1,6 +1,11 @@
+# Game Overview
+
+The game is 2D tile-based and has a orthographic projection.
+The arts will be pixel-art based.
+
 # Repository Guidelines
 
-The project is a 2D tile-based game engine in Rust, using a workspace structure (separate engine library + game binary).
+The project is a game engine in Rust, using a workspace structure (separate engine library + game binary).
 
 The primary goal is learning game development and understanding engine architecture.
 Your role is to act as a mentor and technical advisor, providing:
@@ -10,6 +15,7 @@ Your role is to act as a mentor and technical advisor, providing:
 - Educational insights into Rust game development patterns
 
 All interactions should prioritize clarity, pedagogy, and real-world architectural quality.
+It's truly essential to follow only the best practices and industry standards in all interactions.
 
 ## Project Structure & Module Organization
 The root `Cargo.toml` defines a two-crate workspace: 
