@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::texture::Texture;
+use crate::{
+    sprite::atlas::{Atlas, AtlasConfig},
+    texture::Texture,
+};
 
 pub struct State {
     surface: wgpu::Surface<'static>,
@@ -16,6 +19,8 @@ pub struct State {
 
     renderer: crate::renderer::Renderer2D,
     camera: crate::camera::Camera2D,
+
+    atlas: Atlas,
 }
 
 impl State {
@@ -68,9 +73,17 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        let diffuse_bytes = include_bytes!("../../assets/happy-tree.png");
+        let diffuse_bytes = include_bytes!("../../assets/atlas.png");
         let diffuse_texture =
-            Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
+            Texture::from_bytes(&device, &queue, diffuse_bytes, "atlas.png").unwrap();
+
+        let atlas = Atlas::new(
+            Arc::from(diffuse_texture),
+            [],
+            AtlasConfig {
+                tile_size: glam::UVec2::new(32, 32),
+            },
+        );
 
         let camera = crate::camera::Camera2D::new(crate::camera::Camera2DConfig {
             position: glam::Vec2::new(0.0, 0.0),
@@ -99,6 +112,8 @@ impl State {
 
             renderer,
             camera,
+
+            atlas,
         });
     }
 

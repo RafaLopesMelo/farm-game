@@ -5,6 +5,7 @@ use crate::app::App;
 mod app;
 mod camera;
 mod renderer;
+mod sprite;
 mod state;
 mod texture;
 mod window;
