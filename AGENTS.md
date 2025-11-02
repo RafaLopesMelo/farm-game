@@ -1,6 +1,7 @@
 # Game Overview
 
-The game is 2D tile-based and has a orthographic projection.
+The game is 2D tile-based and has a orthographic projection. Although being a 2D game, it will have 3D features, such as terrain elevation.
+
 The arts will be pixel-art based.
 
 # Repository Guidelines
