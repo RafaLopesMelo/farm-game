@@ -26,6 +26,8 @@ The root `Cargo.toml` defines a two-crate workspace:
 
 Shared rendering programs live in `engine/shaders`, and runtime art belongs in `assets/`. Build artifacts in `target/` are disposable; keep source, shaders, and assets checked in.
 
+The engine must follow strictly the ECS (Entity-Component-System) standards
+
 ### Tech Stack:
 - Rust 2021 with Cargo workspace
 - wgpu

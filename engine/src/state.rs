@@ -75,10 +75,10 @@ impl State {
 
         let diffuse_bytes = include_bytes!("../../assets/atlas.png");
         let diffuse_texture =
-            Texture::from_bytes(&device, &queue, diffuse_bytes, "atlas.png").unwrap();
+            Arc::from(Texture::from_bytes(&device, &queue, diffuse_bytes, "atlas.png").unwrap());
 
         let atlas = Atlas::new(
-            Arc::from(diffuse_texture),
+            diffuse_texture.clone(),
             [],
             AtlasConfig {
                 tile_size: glam::UVec2::new(32, 32),

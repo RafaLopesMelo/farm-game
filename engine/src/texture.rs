@@ -4,6 +4,8 @@ pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
+
+    pub dimensions: glam::UVec2,
 }
 
 impl Texture {
@@ -74,6 +76,12 @@ impl Texture {
             texture,
             sampler,
             view,
+
+            dimensions: glam::UVec2::new(dimensions.0, dimensions.1),
         });
+    }
+
+    pub fn dimensions(&self) -> glam::UVec2 {
+        return self.dimensions;
     }
 }
