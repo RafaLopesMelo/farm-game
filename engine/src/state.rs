@@ -4,7 +4,10 @@ use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use crate::{
     math::units::Pixels,
-    sprite::atlas::{Atlas, AtlasConfig},
+    sprite::{
+        atlas::{Atlas, AtlasConfig, AtlasRegionDescriptor},
+        SpriteId,
+    },
     texture::Texture,
 };
 
@@ -80,9 +83,26 @@ impl State {
 
         let atlas = Atlas::new(
             diffuse_texture.clone(),
-            [],
+            [
+                AtlasRegionDescriptor {
+                    id: SpriteId(1),
+                    coords: glam::UVec2::new(0, 0),
+                },
+                AtlasRegionDescriptor {
+                    id: SpriteId(2),
+                    coords: glam::UVec2::new(1, 0),
+                },
+                AtlasRegionDescriptor {
+                    id: SpriteId(3),
+                    coords: glam::UVec2::new(2, 0),
+                },
+                AtlasRegionDescriptor {
+                    id: SpriteId(4),
+                    coords: glam::UVec2::new(1, 1),
+                },
+            ],
             AtlasConfig {
-                tile_size: [Pixels::new(32.0), Pixels::new(32.0)],
+                tile_size: [Pixels::new(16.0), Pixels::new(16.0)],
             },
         );
 

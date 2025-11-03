@@ -18,8 +18,8 @@ struct AtlasRegion {
 }
 
 pub struct AtlasRegionDescriptor {
-    id: SpriteId,
-    coords: glam::UVec2,
+    pub id: SpriteId,
+    pub coords: glam::UVec2,
 }
 
 pub struct AtlasConfig {
