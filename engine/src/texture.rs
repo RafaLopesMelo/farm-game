@@ -1,11 +1,13 @@
 use image::GenericImageView;
 
+use crate::math::units::Pixels;
+
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
 
-    pub dimensions: glam::UVec2,
+    pub dimensions: [Pixels; 2],
 }
 
 impl Texture {
@@ -77,11 +79,14 @@ impl Texture {
             sampler,
             view,
 
-            dimensions: glam::UVec2::new(dimensions.0, dimensions.1),
+            dimensions: [
+                Pixels::new(dimensions.0 as f32),
+                Pixels::new(dimensions.1 as f32),
+            ],
         });
     }
 
-    pub fn dimensions(&self) -> glam::UVec2 {
+    pub fn dimensions(&self) -> [Pixels; 2] {
         return self.dimensions;
     }
 }

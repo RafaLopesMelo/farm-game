@@ -1,3 +1,5 @@
+use crate::math::units::Pixels;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct UvRect {
@@ -20,12 +22,12 @@ impl UvRect {
     }
 
     #[inline]
-    pub fn from_pixels(coords: [u32; 2], size: [u32; 2], total_size: [u32; 2]) -> Self {
-        let w = (size[0] as f32) / (total_size[0] as f32);
-        let h = (size[1] as f32) / (total_size[1] as f32);
+    pub fn from_pixels(coords: [Pixels; 2], size: [Pixels; 2], total_size: [Pixels; 2]) -> Self {
+        let w = size[0] / total_size[0];
+        let h = size[1] / total_size[1];
 
-        let u = (coords[0] as f32) / (total_size[0] as f32);
-        let v = (coords[1] as f32) / (total_size[1] as f32);
+        let u = coords[0] / total_size[0];
+        let v = coords[1] / total_size[1];
 
         return UvRect::new(u, v, w, h);
     }
@@ -86,14 +88,29 @@ mod tests {
 
     #[test]
     fn test_from_pixels_valid() {
-        let total = [100, 100];
+        let total = [Pixels::new(100.0), Pixels::new(100.0)];
 
         let cases = [
-            ([0, 0], [0, 0]),
-            ([10, 20], [30, 40]),
-            ([100, 100], [100, 100]),
-            ([0, 100], [50, 50]),
-            ([25, 75], [12, 88]),
+            (
+                [Pixels::new(0.0), Pixels::new(0.0)],
+                [Pixels::new(0.0), Pixels::new(0.0)],
+            ),
+            (
+                [Pixels::new(10.0), Pixels::new(20.0)],
+                [Pixels::new(30.0), Pixels::new(40.0)],
+            ),
+            (
+                [Pixels::new(100.0), Pixels::new(100.0)],
+                [Pixels::new(100.0), Pixels::new(100.0)],
+            ),
+            (
+                [Pixels::new(0.0), Pixels::new(100.0)],
+                [Pixels::new(50.0), Pixels::new(50.0)],
+            ),
+            (
+                [Pixels::new(25.0), Pixels::new(75.0)],
+                [Pixels::new(12.0), Pixels::new(88.0)],
+            ),
         ];
 
         let expected = vec![

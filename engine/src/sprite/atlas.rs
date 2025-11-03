@@ -1,10 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{math, sprite::SpriteId, texture::Texture};
+use crate::{
+    math::{self, units::Pixels},
+    sprite::SpriteId,
+    texture::Texture,
+};
 
 pub struct Atlas {
     texture: Arc<Texture>,
-    tile_size: glam::UVec2,
+    tile_size: [Pixels; 2],
     regions: HashMap<SpriteId, AtlasRegion>,
 }
 
@@ -19,7 +23,7 @@ pub struct AtlasRegionDescriptor {
 }
 
 pub struct AtlasConfig {
-    pub tile_size: glam::UVec2,
+    pub tile_size: [Pixels; 2],
 }
 
 impl Atlas {
@@ -33,11 +37,11 @@ impl Atlas {
         for d in definitions {
             let uv = math::uv::UvRect::from_pixels(
                 [
-                    d.coords.x * config.tile_size.x,
-                    d.coords.y * config.tile_size.y,
+                    (d.coords.x as f32) * config.tile_size[0],
+                    (d.coords.y as f32) * config.tile_size[1],
                 ],
-                [config.tile_size.x, config.tile_size.y],
-                [dimensions.x, dimensions.y],
+                [config.tile_size[0], config.tile_size[1]],
+                [dimensions[0], dimensions[1]],
             );
 
             let result = regions.insert(d.id, AtlasRegion { id: d.id, uv });

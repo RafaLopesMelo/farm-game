@@ -3,6 +3,7 @@ use std::sync::Arc;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use crate::{
+    math::units::Pixels,
     sprite::atlas::{Atlas, AtlasConfig},
     texture::Texture,
 };
@@ -81,7 +82,7 @@ impl State {
             diffuse_texture.clone(),
             [],
             AtlasConfig {
-                tile_size: glam::UVec2::new(32, 32),
+                tile_size: [Pixels::new(32.0), Pixels::new(32.0)],
             },
         );
 
