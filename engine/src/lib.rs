@@ -4,6 +4,7 @@ use crate::app::App;
 
 mod app;
 mod camera;
+mod ecs;
 mod math;
 mod renderer;
 mod sprite;
