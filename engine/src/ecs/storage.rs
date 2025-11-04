@@ -1,28 +1,4 @@
-use glam::usize;
-
-/// `Entity` represents a thing that exists in the game world - like a player or a tree
-///
-/// In ECS-based engines, the `Entity` does not store data itself. Instead, it is a unique
-/// identifier that refers to a collection of data called `Component` stored elsewhere
-#[derive(Clone, Copy)]
-pub struct Entity(u32);
-
-impl Entity {
-    pub fn new(v: u32) -> Self {
-        return Self(v);
-    }
-
-    pub fn value(&self) -> u32 {
-        return self.0;
-    }
-
-    pub fn to_idx(&self) -> usize {
-        return self.0 as usize;
-    }
-    pub fn equals(&self, other: &Entity) -> bool {
-        return self.value() == other.value();
-    }
-}
+use crate::ecs::entity::Entity;
 
 /// A sparse set is a data structure for storing components
 /// Provides O(1) insertion, removal, lookup, and cache-friendly iteration
@@ -65,7 +41,7 @@ impl<T> SparseSet<T> {
 
         if idx != last_idx {
             let swapped = self.dense[idx].to_idx();
-            self.sparse[swapped] = self.sparse[entity.to_idx()];
+            self.sparse[swapped] = Some(idx);
         }
 
         self.sparse[entity.to_idx()] = None;
@@ -76,7 +52,7 @@ impl<T> SparseSet<T> {
 
     /// Checks if an entity has a component
     pub fn contains(&self, entity: Entity) -> bool {
-        let v = entity.value() as usize;
+        let v = entity.to_idx();
         if v >= self.capacity {
             return false;
         }
@@ -88,7 +64,7 @@ impl<T> SparseSet<T> {
 
         let i = sparse.unwrap();
 
-        if i < self.dense.len() {
+        if i >= self.dense.len() {
             return false;
         }
 
