@@ -25,8 +25,8 @@ impl<T> SparseSet<T> {
         };
     }
 
-    pub fn insert(&mut self, entity: Entity, component: T) {
-        let id = entity.to_idx();
+    pub fn insert(&mut self, entity: Entity, component: T) -> Option<T> {
+        let id = entity.idx();
 
         if id >= self.capacity() {
             self.sparse.resize(id + 1, None);
@@ -39,12 +39,15 @@ impl<T> SparseSet<T> {
             self.data.push(component);
 
             self.sparse[id] = Some(self.dense.len() - 1);
-            return;
+            return None;
         }
 
         let idx = sparse.unwrap();
+
         self.dense[idx] = entity;
-        self.data[idx] = component;
+        let old = std::mem::replace(&mut self.data[idx], component);
+
+        return Some(old);
     }
 
     pub fn remove(&mut self, entity: Entity) -> Option<T> {
@@ -52,18 +55,18 @@ impl<T> SparseSet<T> {
             return None;
         }
 
-        let idx = self.sparse[entity.to_idx()].unwrap();
+        let idx = self.sparse[entity.idx()].unwrap();
         let last_idx = self.dense.len() - 1;
 
         self.dense.swap(idx, last_idx);
         self.data.swap(idx, last_idx);
 
         if idx != last_idx {
-            let swapped = self.dense[idx].to_idx();
+            let swapped = self.dense[idx].idx();
             self.sparse[swapped] = Some(idx);
         }
 
-        self.sparse[entity.to_idx()] = None;
+        self.sparse[entity.idx()] = None;
         self.dense.pop();
 
         return Some(self.data.pop().unwrap());
@@ -75,7 +78,7 @@ impl<T> SparseSet<T> {
 
     /// Checks if an entity has a component
     pub fn contains(&self, entity: Entity) -> bool {
-        let v = entity.to_idx();
+        let v = entity.idx();
         if v >= self.capacity() {
             return false;
         }
@@ -92,7 +95,7 @@ impl<T> SparseSet<T> {
         }
 
         let dense = self.dense[i];
-        return entity.equals(&dense);
+        return entity == dense;
     }
 
     pub fn get(&self, entity: Entity) -> Option<&T> {
@@ -100,7 +103,7 @@ impl<T> SparseSet<T> {
             return None;
         }
 
-        let idx = self.sparse[entity.to_idx()].unwrap();
+        let idx = self.sparse[entity.idx()].unwrap();
         return Some(&self.data[idx]);
     }
 
@@ -109,7 +112,7 @@ impl<T> SparseSet<T> {
             return None;
         }
 
-        let idx = self.sparse[entity.to_idx()].unwrap();
+        let idx = self.sparse[entity.idx()].unwrap();
         return Some(&mut self.data[idx]);
     }
 }
@@ -121,13 +124,14 @@ mod tests {
     #[test]
     fn test_insert_new() {
         let mut s = SparseSet::<String>::with_capacity(10);
-        let e = Entity::new(1);
+        let e = Entity::new(1, 0);
 
         let value = "hello";
 
-        s.insert(e, "hello".to_string());
+        let old = s.insert(e, "hello".to_string());
         let v = s.get(e);
 
+        assert!(old.is_none());
         assert!(v.is_some());
         assert_eq!(v.unwrap(), value);
     }
@@ -135,24 +139,28 @@ mod tests {
     #[test]
     fn test_insert_existing() {
         let mut s = SparseSet::<String>::with_capacity(10);
-        let e = Entity::new(1);
+        let e = Entity::new(1, 0);
 
-        let value = "world";
+        let v1 = "hello";
+        let v2 = "world";
 
         s.insert(e, "hello".to_string());
-        s.insert(e, value.to_string());
+        let old = s.insert(e, v2.to_string());
 
         let v = s.get(e);
 
         assert!(v.is_some());
-        assert_eq!(v.unwrap(), value);
+        assert_eq!(v.unwrap(), v2);
+
+        assert!(old.is_some());
+        assert_eq!(old.unwrap(), v1);
     }
 
     #[test]
     fn test_insert_out_capacity() {
         let mut s = SparseSet::<String>::with_capacity(1);
-        let e1 = Entity::new(1);
-        let e2 = Entity::new(2);
+        let e1 = Entity::new(1, 0);
+        let e2 = Entity::new(2, 0);
 
         s.insert(e1, "".to_string());
         s.insert(e2, "".to_string());
@@ -164,7 +172,7 @@ mod tests {
     #[test]
     fn test_remove() {
         let mut s = SparseSet::<String>::with_capacity(10);
-        let e = Entity::new(1);
+        let e = Entity::new(1, 0);
 
         let value = "hello";
 
@@ -178,7 +186,7 @@ mod tests {
     #[test]
     fn test_remove_missing() {
         let mut s = SparseSet::<String>::with_capacity(10);
-        let e = Entity::new(1);
+        let e = Entity::new(1, 0);
 
         let v = s.remove(e);
 
