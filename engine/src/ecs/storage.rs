@@ -11,8 +11,6 @@ pub struct SparseSet<T> {
 
     /// Packed array of components matching dense array
     data: Vec<T>,
-
-    capacity: usize,
 }
 
 impl<T> SparseSet<T> {
@@ -24,8 +22,29 @@ impl<T> SparseSet<T> {
             sparse: vec![None; capacity],
             dense,
             data: Vec::new(),
-            capacity,
         };
+    }
+
+    pub fn insert(&mut self, entity: Entity, component: T) {
+        let id = entity.to_idx();
+
+        if id >= self.capacity() {
+            self.sparse.resize(id + 1, None);
+        }
+
+        let sparse = self.sparse[id];
+
+        if sparse.is_none() {
+            self.dense.push(entity);
+            self.data.push(component);
+
+            self.sparse[id] = Some(self.dense.len() - 1);
+            return;
+        }
+
+        let idx = sparse.unwrap();
+        self.dense[idx] = entity;
+        self.data[idx] = component;
     }
 
     pub fn remove(&mut self, entity: Entity) -> Option<T> {
@@ -50,10 +69,14 @@ impl<T> SparseSet<T> {
         return Some(self.data.pop().unwrap());
     }
 
+    fn capacity(&self) -> usize {
+        return self.sparse.len();
+    }
+
     /// Checks if an entity has a component
     pub fn contains(&self, entity: Entity) -> bool {
         let v = entity.to_idx();
-        if v >= self.capacity {
+        if v >= self.capacity() {
             return false;
         }
 
@@ -88,5 +111,77 @@ impl<T> SparseSet<T> {
 
         let idx = self.sparse[entity.to_idx()].unwrap();
         return Some(&mut self.data[idx]);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_insert_new() {
+        let mut s = SparseSet::<String>::with_capacity(10);
+        let e = Entity::new(1);
+
+        let value = "hello";
+
+        s.insert(e, "hello".to_string());
+        let v = s.get(e);
+
+        assert!(v.is_some());
+        assert_eq!(v.unwrap(), value);
+    }
+
+    #[test]
+    fn test_insert_existing() {
+        let mut s = SparseSet::<String>::with_capacity(10);
+        let e = Entity::new(1);
+
+        let value = "world";
+
+        s.insert(e, "hello".to_string());
+        s.insert(e, value.to_string());
+
+        let v = s.get(e);
+
+        assert!(v.is_some());
+        assert_eq!(v.unwrap(), value);
+    }
+
+    #[test]
+    fn test_insert_out_capacity() {
+        let mut s = SparseSet::<String>::with_capacity(1);
+        let e1 = Entity::new(1);
+        let e2 = Entity::new(2);
+
+        s.insert(e1, "".to_string());
+        s.insert(e2, "".to_string());
+
+        assert!(s.get(e1).is_some());
+        assert!(s.get(e2).is_some());
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut s = SparseSet::<String>::with_capacity(10);
+        let e = Entity::new(1);
+
+        let value = "hello";
+
+        s.insert(e, "hello".to_string());
+        let v = s.remove(e);
+
+        assert!(v.is_some());
+        assert_eq!(v.unwrap(), value)
+    }
+
+    #[test]
+    fn test_remove_missing() {
+        let mut s = SparseSet::<String>::with_capacity(10);
+        let e = Entity::new(1);
+
+        let v = s.remove(e);
+
+        assert!(v.is_none());
     }
 }
