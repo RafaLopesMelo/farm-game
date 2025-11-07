@@ -120,6 +120,22 @@ impl<T> SparseSet<T> {
         let idx = self.sparse[entity.idx()].unwrap();
         return Some(&mut self.data[idx]);
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Entity, &T)> {
+        return self
+            .dense
+            .iter()
+            .zip(self.data.iter())
+            .map(|(k, v)| (*k, v));
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Entity, &mut T)> {
+        return self
+            .dense
+            .iter()
+            .zip(self.data.iter_mut())
+            .map(|(k, v)| (*k, v));
+    }
 }
 
 impl<T: Component> ComponentStore for SparseSet<T> {
@@ -210,5 +226,20 @@ mod tests {
         let v = s.remove(e);
 
         assert!(v.is_none());
+    }
+
+    #[test]
+    fn test_iter() {
+        let mut s = SparseSet::<String>::with_capacity(10);
+        let e = Entity::new(1, 0);
+
+        let value = "hello";
+        s.insert(e, value.to_string());
+
+        let mut iter = s.iter();
+        let v = iter.next().unwrap();
+        assert_eq!(v.0, e);
+        assert_eq!(v.1, value);
+        assert!(iter.next().is_none());
     }
 }
