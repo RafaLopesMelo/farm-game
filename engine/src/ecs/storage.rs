@@ -1,4 +1,9 @@
-use crate::ecs::entity::Entity;
+use std::any::Any;
+
+use crate::ecs::{
+    component::{Component, ComponentStore},
+    entity::Entity,
+};
 
 /// A sparse set is a data structure for storing components
 /// Provides O(1) insertion, removal, lookup, and cache-friendly iteration
@@ -51,7 +56,7 @@ impl<T> SparseSet<T> {
     }
 
     pub fn remove(&mut self, entity: Entity) -> Option<T> {
-        if !self.contains(entity) {
+        if !self.has(entity) {
             return None;
         }
 
@@ -77,7 +82,7 @@ impl<T> SparseSet<T> {
     }
 
     /// Checks if an entity has a component
-    pub fn contains(&self, entity: Entity) -> bool {
+    pub fn has(&self, entity: Entity) -> bool {
         let v = entity.idx();
         if v >= self.capacity() {
             return false;
@@ -99,7 +104,7 @@ impl<T> SparseSet<T> {
     }
 
     pub fn get(&self, entity: Entity) -> Option<&T> {
-        if !self.contains(entity) {
+        if !self.has(entity) {
             return None;
         }
 
@@ -108,12 +113,18 @@ impl<T> SparseSet<T> {
     }
 
     pub fn get_mut(&mut self, entity: Entity) -> Option<&mut T> {
-        if !self.contains(entity) {
+        if !self.has(entity) {
             return None;
         }
 
         let idx = self.sparse[entity.idx()].unwrap();
         return Some(&mut self.data[idx]);
+    }
+}
+
+impl<T: Component> ComponentStore for SparseSet<T> {
+    fn remove(&mut self, entity: Entity) {
+        self.remove(entity);
     }
 }
 

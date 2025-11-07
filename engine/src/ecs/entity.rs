@@ -41,7 +41,7 @@ impl EntityAllocator {
         };
     }
 
-    pub fn allocate(&mut self) -> Entity {
+    pub fn alloc(&mut self) -> Entity {
         if let Some(i) = self.recycled.pop() {
             let idx = i as usize;
             return Entity::new(i, self.generations[idx]);
@@ -77,33 +77,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_allocate_new() {
+    fn test_alloc_new() {
         let mut a = EntityAllocator::new();
-        let e = a.allocate();
+        let e = a.alloc();
 
         assert_eq!(e.slot(), 0);
         assert_eq!(e.generation(), 0);
     }
 
     #[test]
-    fn test_multi_allocate() {
+    fn test_multi_alloc() {
         let mut a = EntityAllocator::new();
 
-        a.allocate();
-        let e2 = a.allocate();
+        a.alloc();
+        let e2 = a.alloc();
 
         assert_eq!(e2.slot(), 1);
         assert_eq!(e2.generation(), 0);
     }
 
     #[test]
-    fn test_allocate_recycling() {
+    fn test_alloc_recycling() {
         let mut a = EntityAllocator::new();
 
-        let e1 = a.allocate();
+        let e1 = a.alloc();
         a.free(e1);
 
-        let e2 = a.allocate();
+        let e2 = a.alloc();
 
         assert_eq!(e2.slot(), 0);
         assert_eq!(e2.generation(), 1);
