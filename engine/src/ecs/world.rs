@@ -1,15 +1,9 @@
-use std::{
-    any::{Any, TypeId},
-    collections::HashMap,
-};
+use std::{any::TypeId, collections::HashMap};
 
-use crate::{
-    ecs::{
-        component::{Component, ComponentStore},
-        entity::{Entity, EntityAllocator},
-        storage::SparseSet,
-    },
-    utils,
+use crate::ecs::{
+    component::{Component, ComponentStore},
+    entity::{Entity, EntityAllocator},
+    storage::SparseSet,
 };
 
 pub struct World {
@@ -58,7 +52,8 @@ impl World {
             )
         });
 
-        return utils::as_any_ref(s)
+        return s
+            .as_any_ref()
             .downcast_ref::<SparseSet<C>>()
             .expect("internal error: component store type mismatch");
     }
@@ -71,7 +66,8 @@ impl World {
             )
         });
 
-        return utils::as_any_mut(s)
+        return s
+            .as_any_mut()
             .downcast_mut::<SparseSet<C>>()
             .expect("internal error: component store type mismatch");
     }
@@ -103,6 +99,8 @@ impl World {
 
 #[cfg(test)]
 mod tests {
+    use std::panic;
+
     use super::*;
 
     struct TestComponent {
@@ -118,17 +116,20 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_insert_unregistered() {
-        let mut world = World::new();
-        let e = world.spawn();
+        let result = panic::catch_unwind(|| {
+            let mut world = World::new();
+            let e = world.spawn();
 
-        world.insert(
-            e,
-            TestComponent {
-                value: "test".to_string(),
-            },
-        );
+            world.insert(
+                e,
+                TestComponent {
+                    value: "test".to_string(),
+                },
+            );
+        });
+
+        assert!(result.is_err());
     }
 
     #[test]

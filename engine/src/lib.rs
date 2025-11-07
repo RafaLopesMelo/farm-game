@@ -10,7 +10,6 @@ mod renderer;
 mod sprite;
 mod state;
 mod texture;
-mod utils;
 mod window;
 
 #[repr(C)]

@@ -126,6 +126,14 @@ impl<T: Component> ComponentStore for SparseSet<T> {
     fn remove(&mut self, entity: Entity) {
         self.remove(entity);
     }
+
+    fn as_any_ref(&self) -> &dyn Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        return self;
+    }
 }
 
 #[cfg(test)]
