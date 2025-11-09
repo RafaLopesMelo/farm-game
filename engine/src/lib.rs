@@ -6,7 +6,7 @@ mod app;
 mod camera;
 mod ecs;
 mod math;
-mod renderer;
+mod render;
 mod sprite;
 mod state;
 mod texture;

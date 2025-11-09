@@ -21,7 +21,7 @@ pub struct State {
 
     pub window: Arc<Window>,
 
-    renderer: crate::renderer::Renderer2D,
+    renderer: crate::render::renderer::Renderer2D,
     camera: crate::camera::Camera2D,
 
     atlas: Atlas,
@@ -112,9 +112,9 @@ impl State {
             viewport_size: glam::Vec2::new(size.width as f32, size.height as f32),
         });
 
-        let renderer = crate::renderer::Renderer2D::new(
+        let renderer = crate::render::renderer::Renderer2D::new(
             &device,
-            crate::renderer::Renderer2DConfig {
+            crate::render::renderer::Renderer2DConfig {
                 texture: &diffuse_texture,
                 texture_format: config.format,
 

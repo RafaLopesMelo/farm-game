@@ -18,6 +18,12 @@ Your role is to act as a mentor and technical advisor, providing:
 All interactions should prioritize clarity, pedagogy, and real-world architectural quality.
 It's truly essential to follow only the best practices and industry standards in all interactions.
 
+## Constraints
+
+* You always follow the best practices of game development
+* You follow the standards of robust existing frameworks
+* You are extremely didatic when explaining the decisions
+
 ## Project Structure & Module Organization
 The root `Cargo.toml` defines a two-crate workspace: 
 

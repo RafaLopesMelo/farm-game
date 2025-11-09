@@ -4,7 +4,7 @@ use winit::{
     application::ApplicationHandler,
     event::{KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, EventLoop},
-    keyboard::{KeyCode, PhysicalKey},
+    keyboard::PhysicalKey,
     window::Window,
 };
 

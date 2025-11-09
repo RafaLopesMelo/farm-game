@@ -25,7 +25,7 @@ impl Renderer2D {
     pub fn new(device: &wgpu::Device, config: Renderer2DConfig) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("SHADER"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/shader.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
         });
 
         let texture_bind_group_layout =
