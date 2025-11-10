@@ -1,12 +1,12 @@
 use crate::{
+    assets::AssetId,
     math::coords::{Coords2D, Coords3D},
-    sprite::SpriteId,
 };
 
 struct TileKind {
     id: u16,
     name: String,
-    sprite: SpriteId,
+    sprite: AssetId,
 }
 
 #[derive(Clone, Copy)]
@@ -27,7 +27,7 @@ impl Tile {
 
 const CHUNK_SIZE: usize = 64;
 
-struct Chunk {
+pub struct Chunk {
     /// The tiles contained in the chunk
     /// A flat array was chosen instead of a multi-dimensional array because of better CPU caching
     tiles: [Tile; CHUNK_SIZE * CHUNK_SIZE],

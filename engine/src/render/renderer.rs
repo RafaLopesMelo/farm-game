@@ -1,11 +1,19 @@
-use wgpu::util::DeviceExt;
-use wgpu::TextureFormat;
+use std::sync::Arc;
+
+use wgpu::{util::DeviceExt, SurfaceError};
+use winit::window::Window;
 
 use crate::Vertex;
 
 pub struct Renderer2D {
+    surface: wgpu::Surface<'static>,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    config: wgpu::SurfaceConfiguration,
+
+    is_surface_configured: bool,
+
     pipeline: wgpu::RenderPipeline,
-    texture_bind_group: wgpu::BindGroup,
 
     camera_bind_group: wgpu::BindGroup,
     camera_buffer: wgpu::Buffer,
@@ -15,55 +23,62 @@ pub struct Renderer2D {
 }
 
 pub struct Renderer2DConfig<'a> {
-    pub texture: &'a crate::texture::Texture,
-    pub texture_format: TextureFormat,
-
     pub camera: &'a crate::camera::Camera2D,
 }
 
 impl Renderer2D {
-    pub fn new(device: &wgpu::Device, config: Renderer2DConfig) -> Self {
+    pub async fn new(window: Arc<Window>, config: Renderer2DConfig<'_>) -> Self {
+        let size = window.inner_size();
+
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::PRIMARY,
+            ..Default::default()
+        });
+
+        let surface = instance.create_surface(window.clone()).unwrap();
+
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::default(),
+                compatible_surface: Some(&surface),
+                force_fallback_adapter: false,
+            })
+            .await
+            .unwrap();
+
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                label: None,
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::default(),
+                memory_hints: Default::default(),
+                trace: wgpu::Trace::Off,
+            })
+            .await
+            .unwrap();
+
+        let surface_caps = surface.get_capabilities(&adapter);
+        let surface_format = surface_caps
+            .formats
+            .iter()
+            .find(|f| f.is_srgb())
+            .copied()
+            .unwrap_or(surface_caps.formats[0]);
+
+        let surface_config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: surface_format,
+            width: size.width,
+            height: size.height,
+            present_mode: surface_caps.present_modes[0],
+            alpha_mode: surface_caps.alpha_modes[0],
+            view_formats: vec![],
+            desired_maximum_frame_latency: 2,
+        };
+
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("SHADER"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
-        });
-
-        let texture_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-                label: Some("TEXTURE_BIND_GROUP_LAYOUT"),
-            });
-
-        let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("TEXTURE_BIND_GROUP"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&config.texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&config.texture.sampler),
-                },
-            ],
         });
 
         let camera_uniform = crate::camera::CameraUniform::from_camera(&config.camera);
@@ -101,7 +116,7 @@ impl Renderer2D {
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("RENDER_PIPELINE_LAYOUT"),
-            bind_group_layouts: &[&camera_bind_group_layout, &texture_bind_group_layout],
+            bind_group_layouts: &[&camera_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -114,16 +129,7 @@ impl Renderer2D {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 buffers: &[Vertex::desc()],
             },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some("fs_main"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.texture_format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
+            fragment: None,
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
@@ -156,8 +162,13 @@ impl Renderer2D {
         });
 
         return Self {
+            is_surface_configured: false,
+            device,
+            queue,
+            config: surface_config,
+            surface,
+
             pipeline,
-            texture_bind_group,
 
             camera_bind_group,
             camera_buffer,
@@ -167,18 +178,23 @@ impl Renderer2D {
         };
     }
 
-    pub fn render(
-        &self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        view: &wgpu::TextureView,
-        camera: &crate::camera::Camera2D,
-    ) {
-        self.write_camera_uniform(queue, camera);
+    pub fn render(&self, camera: &crate::camera::Camera2D) -> Result<(), SurfaceError> {
+        if !self.is_surface_configured {
+            return Ok(());
+        }
 
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("RENDER_ENCODER"),
-        });
+        let output = self.surface.get_current_texture()?;
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        self.write_camera_uniform(&self.queue, camera);
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("RENDER_ENCODER"),
+            });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -206,18 +222,38 @@ impl Renderer2D {
 
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
             render_pass.draw_indexed(0..num_indices, 0, 0..1);
         }
 
-        queue.submit(std::iter::once(encoder.finish()));
+        self.queue.submit(std::iter::once(encoder.finish()));
+
+        output.present();
+
+        return Ok(());
     }
 
     fn write_camera_uniform(&self, queue: &wgpu::Queue, camera: &crate::camera::Camera2D) {
         let uniform = crate::camera::CameraUniform::from_camera(camera);
         queue.write_buffer(&self.camera_buffer, 0, bytemuck::bytes_of(&uniform));
+    }
+
+    pub fn device(&self) -> &wgpu::Device {
+        return &self.device;
+    }
+
+    pub fn queue(&self) -> &wgpu::Queue {
+        return &self.queue;
+    }
+
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width > 0 && height > 0 {
+            self.config.width = width;
+            self.config.height = height;
+            self.surface.configure(&self.device, &self.config);
+            self.is_surface_configured = true;
+        }
     }
 }

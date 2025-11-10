@@ -1,17 +1,15 @@
 use winit::event_loop::EventLoop;
 
-use crate::app::App;
+use crate::handler::Handler;
 
-mod app;
+mod assets;
 mod camera;
 mod ecs;
+mod handler;
+mod internal;
 mod math;
 mod render;
-mod sprite;
-mod state;
-mod texture;
 mod tilemap;
-mod window;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -61,9 +59,19 @@ const VERTICES: &[Vertex] = &[
 
 const INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
 
-pub fn run() {
-    let event_loop = EventLoop::with_user_event().build().unwrap();
-    let mut app = App::new(&event_loop);
+pub struct Engine {
+    handler: Handler,
+}
 
-    event_loop.run_app(&mut app).unwrap();
+impl Engine {
+    pub fn new() -> Self {
+        return Self {
+            handler: Handler::new(),
+        };
+    }
+
+    pub fn run(&mut self) {
+        let event_loop = EventLoop::with_user_event().build().unwrap();
+        event_loop.run_app(&mut self.handler).unwrap();
+    }
 }

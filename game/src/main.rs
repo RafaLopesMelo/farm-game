@@ -1,3 +1,6 @@
+use engine::Engine;
+
 pub fn main() {
-    engine::run();
+    let mut engine = Engine::new();
+    engine.run();
 }

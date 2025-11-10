@@ -1,10 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{
-    math::{self, units::Pixels},
-    sprite::SpriteId,
-    texture::Texture,
-};
+use crate::math::{self, units::Pixels};
 
 pub struct Atlas {
     texture: Arc<Texture>,

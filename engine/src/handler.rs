@@ -3,36 +3,36 @@ use std::sync::Arc;
 use winit::{
     application::ApplicationHandler,
     event::{KeyEvent, WindowEvent},
-    event_loop::{ActiveEventLoop, EventLoop},
+    event_loop::ActiveEventLoop,
     keyboard::PhysicalKey,
     window::Window,
 };
 
-use crate::state::State;
+use crate::internal::Internal;
 
-const PIXELS_PER_LINE: f32 = 120.0;
-const MAX_SCROLL_LINES: f32 = 3.0;
+pub const PIXELS_PER_LINE: f32 = 120.0;
+pub const MAX_SCROLL_LINES: f32 = 3.0;
 
-pub struct App {
-    state: Option<State>,
+pub struct Handler {
+    internal: Option<Internal>,
 }
 
-impl App {
-    pub fn new(event_loop: &EventLoop<State>) -> Self {
-        return Self { state: None };
+impl Handler {
+    pub fn new() -> Self {
+        return Self { internal: None };
     }
 }
 
-impl ApplicationHandler<State> for App {
+impl ApplicationHandler<Internal> for Handler {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let mut window_attrs = Window::default_attributes();
+        let window_attrs = Window::default_attributes();
 
         let window = Arc::new(event_loop.create_window(window_attrs).unwrap());
-        self.state = Some(pollster::block_on(State::new(window)).unwrap());
+        self.internal = Some(pollster::block_on(Internal::new(window)).unwrap());
     }
 
-    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: State) {
-        self.state = Some(event);
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: Internal) {
+        self.internal = Some(event);
     }
 
     fn window_event(
@@ -41,22 +41,22 @@ impl ApplicationHandler<State> for App {
         window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        let state = match &mut self.state {
+        let internal = match &mut self.internal {
             Some(s) => s,
             None => return,
         };
 
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(size) => state.resize(size.width, size.height),
+            WindowEvent::Resized(size) => internal.resize(size.width, size.height),
             WindowEvent::RedrawRequested => {
-                state.update();
+                internal.update();
 
-                match state.render() {
+                match internal.render() {
                     Ok(_) => {}
                     Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        let size = state.window.inner_size();
-                        state.resize(size.width, size.height);
+                        let size = internal.window.inner_size();
+                        internal.resize(size.width, size.height);
                     }
                     Err(e) => {
                         panic!("unable to render {}", e);
@@ -71,7 +71,7 @@ impl ApplicationHandler<State> for App {
                         ..
                     },
                 ..
-            } => state.handle_key(event_loop, code, key_state.is_pressed()),
+            } => internal.handle_key(event_loop, code, key_state.is_pressed()),
             WindowEvent::MouseWheel { delta, .. } => {
                 let normalized_lines = match delta {
                     winit::event::MouseScrollDelta::LineDelta(_, y) => y,
@@ -83,7 +83,7 @@ impl ApplicationHandler<State> for App {
 
                 let clamped = normalized_lines.clamp(-MAX_SCROLL_LINES, MAX_SCROLL_LINES);
 
-                state.handle_wheel(clamped);
+                internal.handle_wheel(clamped);
             }
             _ => {}
         }
