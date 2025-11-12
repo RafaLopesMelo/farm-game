@@ -21,6 +21,14 @@ impl Handler {
     pub fn new() -> Self {
         return Self { internal: None };
     }
+
+    pub fn internal(&self) -> &Internal {
+        return self.internal.as_ref().unwrap();
+    }
+
+    pub fn internal_mut(&mut self) -> &mut Internal {
+        return self.internal.as_mut().unwrap();
+    }
 }
 
 impl ApplicationHandler<Internal> for Handler {

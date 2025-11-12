@@ -62,4 +62,12 @@ impl AssetsRegistry {
             next_id: AssetId::new(0),
         };
     }
+
+    pub fn insert_texture(&mut self, texture: Texture) -> AssetId {
+        let id = self.next_id;
+        self.next_id = AssetId(id.value() + 1);
+        self.textures.insert(id, texture);
+
+        return id;
+    }
 }

@@ -1,10 +1,10 @@
 use winit::event_loop::EventLoop;
 
-use crate::handler::Handler;
+use crate::{ecs::scheduler::System, handler::Handler};
 
 mod assets;
 mod camera;
-mod ecs;
+pub mod ecs;
 mod handler;
 mod internal;
 mod math;
@@ -73,5 +73,16 @@ impl Engine {
     pub fn run(&mut self) {
         let event_loop = EventLoop::with_user_event().build().unwrap();
         event_loop.run_app(&mut self.handler).unwrap();
+    }
+
+    pub fn load_texture(&mut self, path: &str) {
+        self.handler.internal_mut().load_texture(path);
+    }
+
+    pub fn add_system<S>(&mut self, system: S)
+    where
+        S: System + 'static,
+    {
+        self.handler.internal_mut().add_system(system);
     }
 }
