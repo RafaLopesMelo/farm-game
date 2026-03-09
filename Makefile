@@ -1,38 +1,16 @@
-.PHONY: help build test run watch release
+BUILD_FLAGS := -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
-.DEFAULT_GOAL := help
+.PHONY: help build
 
-run:
-	@echo "🎮 Running game (debug mode)..."
-	cargo run -p game
-
-watch:
-	@echo "👀 Watching for changes..."
-	@command -v cargo-watch >/dev/null 2>&1 || { echo "❌ cargo-watch not installed. Run: make install-tools"; exit 1; }
-	cargo watch -x "run -p game"
-
-test:
-	@echo "🧪 Running tests..."
-	cargo test --workspace
+help: ## Show this help message
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $1, $2}' $(MAKEFILE_LIST)
 
 build:
-	@echo "🔨 Building workspace..."
-	cargo build
+	@echo "Building engine..."
+	cd engine && \
+		cmake -S . -B build $(BUILD_FLAGS) && \
+		cmake --build build
 
-release:
-	@echo "🚀 Running game (release mode)..."
-	cargo run -p game --release
-
-help:
-	@echo "🎮 Game Engine Makefile Commands"
-	@echo "================================"
-	@echo ""
-	@echo "Main Commands:"
-	@echo "  make run              - Run game (debug mode)"
-	@echo "  make release          - Run game (release mode) ⭐"
-	@echo "  make build            - Build everything"
-	@echo "  make test             - Run tests"
-	@echo ""
-	@echo "Development:"
-	@echo "  make watch            - Auto-reload on changes"
-	@echo ""
