@@ -1,7 +1,7 @@
 #include "engine/engine.hpp"
 
 int main() {
-    auto e = engine::Engine();
+    engine::Engine e;
     e.run();
     return 0;
 }
