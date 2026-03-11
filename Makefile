@@ -1,4 +1,4 @@
-BUILD_FLAGS := -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+BUILD_FLAGS := -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE=$(VCPKG_ROOT)/scripts/buildsystems/vcpkg.cmake
 
 .PHONY: help build
 
@@ -11,6 +11,6 @@ help: ## Show this help message
 build:
 	@echo "Building engine..."
 	cd engine && \
-		cmake -S . -B build $(BUILD_FLAGS) && \
+		cmake -S . -B build -G Ninja $(BUILD_FLAGS) && \
 		cmake --build build
 
