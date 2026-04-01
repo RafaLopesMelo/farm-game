@@ -16,5 +16,8 @@ configure: ## Configure the project with CMake
 build: configure ## Build all targets
 	cmake --build $(BUILD_DIR)
 
+run: build ## Build and run the testbed
+	./$(BUILD_DIR)/testbed/testbed
+
 clean: ## Remove build directory
 	rm -rf $(BUILD_DIR)
