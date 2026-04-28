@@ -74,8 +74,10 @@ void Window::_handleError(int error, const char *description) {
 }
 
 void Window::_handleKey(GLFWwindow *w, int key, int scancode, int action, int mods) {
+    std::cout << scancode << std::endl;
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(w, GLFW_TRUE);
+        _handleCloseRequest(w);
         return;
     }
 }
