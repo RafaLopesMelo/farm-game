@@ -1,2 +1,13 @@
-.zig-cache
-zig-out
+# Build artifacts
+zig-out/
+.zig-cache/
+
+# Cross-platform editor noise
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Game-specific
+saves/
+*.log
