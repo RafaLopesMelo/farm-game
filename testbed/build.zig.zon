@@ -1,0 +1,16 @@
+.{
+    .name = .testbed,
+    .version = "0.0.1",
+    .fingerprint = 0x9e5b3d96a7c00c6b,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .engine = .{
+            .path = "../engine",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
