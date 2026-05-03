@@ -37,4 +37,7 @@ pub fn build(b: *std.Build) void {
     const lib_tests = b.addTest(.{ .root_module = mod });
     const test_step = b.step("test", "Run engine tests");
     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
+
+    const check_step = b.step("check", "Type-check the engine");
+    check_step.dependOn(&lib_tests.step);  // compile-only, not run
 }
