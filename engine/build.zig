@@ -11,6 +11,9 @@ pub fn build(b: *std.Build) void {
     });
 
     mod.link_libc = true;
+
+    // Rust Libraries Compatibility
+    mod.linkSystemLibrary("gcc_s", .{});
     
     // GLFW
     mod.linkSystemLibrary("glfw", .{});
