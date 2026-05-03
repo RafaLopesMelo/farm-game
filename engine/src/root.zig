@@ -84,21 +84,6 @@ pub const Engine = struct {
         _ = c.wgpuSurfaceGetCapabilities(surface, adapter.?, &caps);
 
         const format = caps.formats[0];
-        const config: c.WGPUSurfaceConfiguration = .{
-            .nextInChain = null,
-            .device = device.?,
-            .format = format,
-            .usage = c.WGPUTextureUsage_RenderAttachment,
-            .viewFormatCount = 0,
-            .viewFormats = null,
-            .alphaMode = caps.alphaModes[0],
-            .width = @intCast(fb_w),
-            .height = @intCast(fb_h),
-            .presentMode = c.WGPUPresentMode_Fifo,
-        };
-
-        c.wgpuSurfaceConfigure(surface, &config);
-        c.wgpuSurfaceCapabilitiesFreeMembers(caps);
         // --- SURFACE END ---
         //
         // --- PIPELINE START ---
@@ -161,7 +146,7 @@ pub const Engine = struct {
         const pipeline = c.wgpuDeviceCreateRenderPipeline(device.?, &pipeline_desc) orelse return null;
         // --- PIPELINE END ---
 
-        return .{
+        var engine: Engine = .{
             .w = w,
             .instance = instance,
             .adapter = adapter.?,
@@ -173,6 +158,10 @@ pub const Engine = struct {
             .shader = shader,
             .pipeline = pipeline,
         };
+
+        engine.configureSurface(fb_w, fb_h);
+
+        return engine;
     }
 
     pub fn deinit(self: *Engine) void {
@@ -190,6 +179,9 @@ pub const Engine = struct {
     }
 
     pub fn run(self: *Engine) void {
+        c.glfwSetWindowUserPointer(self.w, self);
+        _ = c.glfwSetFramebufferSizeCallback(self.w, onFramebufferSize);
+
         while (c.glfwWindowShouldClose(self.w) == 0) {
             c.glfwPollEvents();
             self.render();
@@ -297,6 +289,36 @@ pub const Engine = struct {
             "(no message)";
 
         std.debug.print("wgpu error (type={d}): {s}\n", .{ err_type, text });
+    }
+
+    fn onFramebufferSize(window: ?*c.GLFWwindow, w: c_int, h: c_int) callconv(.c) void {
+        const self: *Engine = @ptrCast(@alignCast(
+            c.glfwGetWindowUserPointer(window).?,
+        ));
+
+        self.configureSurface(w, h);
+    }
+
+    pub fn configureSurface(self: *Engine, w: c_int, h: c_int) void {
+        if (w <= 0 or h <= 0) return;
+
+        var caps: c.WGPUSurfaceCapabilities = std.mem.zeroes(c.WGPUSurfaceCapabilities);
+        _ = c.wgpuSurfaceGetCapabilities(self.surface, self.adapter, &caps);
+        defer c.wgpuSurfaceCapabilitiesFreeMembers(caps);
+
+        const config: c.WGPUSurfaceConfiguration = .{
+            .nextInChain = null,
+            .device = self.device,
+            .format = self.format,
+            .usage = c.WGPUTextureUsage_RenderAttachment,
+            .viewFormatCount = 0,
+            .viewFormats = null,
+            .alphaMode = caps.alphaModes[0],
+            .width = @intCast(w),
+            .height = @intCast(h),
+            .presentMode = c.WGPUPresentMode_Fifo,
+        };
+        c.wgpuSurfaceConfigure(self.surface, &config);
     }
 };
 
