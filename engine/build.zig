@@ -4,36 +4,37 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const engine_mod = b.addModule("engine", .{
+    const mod = b.addModule("engine", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    const exe_mod = b.createModule(.{
-        .root_source_file = b.path("src/main.zig"),
+    mod.link_libc = true;
+    
+    // GLFW
+    mod.linkSystemLibrary("glfw", .{});
+
+    // WGPU
+    mod.addIncludePath(b.path("vendor/wgpu/include"));
+    mod.addLibraryPath(b.path("vendor/wgpu/lib"));
+    mod.linkSystemLibrary("wgpu_native", .{
+        .preferred_link_mode = .static
+    });
+
+    // Translate C
+    const translate_c = b.addTranslateC(.{
+        .root_source_file = b.path("src/c.h"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
-    exe_mod.addImport("engine", engine_mod);
+    translate_c.addIncludePath(b.path("vendor/wgpu/include/"));
 
-    const exe = b.addExecutable(.{
-        .name = "engine",
-        .root_module = exe_mod,
-    });
-    b.installArtifact(exe);
+    const c_mod = translate_c.createModule();
+    mod.addImport("c", c_mod);
 
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| run_cmd.addArgs(args);
-
-    const run_step = b.step("run", "Run the engine demo");
-    run_step.dependOn(&run_cmd.step);
-
-    const lib_tests = b.addTest(.{ .root_module = engine_mod });
-    const exe_tests = b.addTest(.{ .root_module = exe_mod });
-
+    const lib_tests = b.addTest(.{ .root_module = mod });
     const test_step = b.step("test", "Run engine tests");
     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
-    test_step.dependOn(&b.addRunArtifact(exe_tests).step);
 }

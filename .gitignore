@@ -1,6 +1,8 @@
 # Build artifacts
 zig-out/
+zig-pkg/
 .zig-cache/
+vendor/
 
 # Cross-platform editor noise
 .vscode/
