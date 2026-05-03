@@ -20,7 +20,6 @@ pub fn build(b: *std.Build) void {
         .name = "testbed",
         .root_module = mod,
     });
-    exe.use_lld = false;
 
     b.installArtifact(exe);
 

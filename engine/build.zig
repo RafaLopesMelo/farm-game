@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
     });
-    translate_c.addIncludePath(b.path("vendor/wgpu/include/"));
+    translate_c.addIncludePath(b.path("vendor/wgpu/include"));
 
     const c_mod = translate_c.createModule();
     mod.addImport("c", c_mod);
