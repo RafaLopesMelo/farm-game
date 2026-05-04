@@ -1,7 +1,18 @@
 const std = @import("std");
 pub const c = @import("c");
 
+pub const Vertex = extern struct {
+    x: f32,
+    y: f32,
+};
+
 pub const Engine = struct {
+    const vertices = [_]Vertex{
+        .{ .x = 0.0, .y = 0.5 },
+        .{ .x = -0.5, .y = -0.5 },
+        .{ .x = 0.5, .y = -0.5 },
+    };
+
     w: *c.GLFWwindow,
 
     instance: c.WGPUInstance,
@@ -13,6 +24,8 @@ pub const Engine = struct {
     format: c.WGPUTextureFormat,
     shader: c.WGPUShaderModule,
     pipeline: c.WGPURenderPipeline,
+
+    vertex_buffer: c.WGPUBuffer,
 
     pub fn init() ?Engine {
         if (c.glfwInit() == 0) {
@@ -124,6 +137,19 @@ pub const Engine = struct {
         multisample.count = 1;
         multisample.mask = 0xFFFFFF;
 
+        const vertex_attr: c.WGPUVertexAttribute = .{
+            .format = c.WGPUVertexFormat_Float32x2,
+            .offset = 0,
+            .shaderLocation = 0,
+        };
+
+        const vertex_layout: c.WGPUVertexBufferLayout = .{
+            .arrayStride = @sizeOf(Vertex),
+            .stepMode = c.WGPUVertexStepMode_Vertex,
+            .attributeCount = 1,
+            .attributes = &vertex_attr,
+        };
+
         const pipeline_desc: c.WGPURenderPipelineDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
@@ -134,8 +160,8 @@ pub const Engine = struct {
                 .entryPoint = .{ .data = "vs", .length = 2 },
                 .constantCount = 0,
                 .constants = null,
-                .bufferCount = 0,
-                .buffers = null,
+                .bufferCount = 1,
+                .buffers = &vertex_layout,
             },
             .primitive = primitive,
             .depthStencil = null,
@@ -146,17 +172,33 @@ pub const Engine = struct {
         const pipeline = c.wgpuDeviceCreateRenderPipeline(device.?, &pipeline_desc) orelse return null;
         // --- PIPELINE END ---
 
+        const buffer_size: u64 = @sizeOf(Vertex) * vertices.len;
+        const buffer_desc: c.WGPUBufferDescriptor = .{
+            .nextInChain = null,
+            .label = .{ .data = null, .length = 0 },
+            .usage = c.WGPUBufferUsage_Vertex | c.WGPUBufferUsage_CopyDst,
+            .size = buffer_size,
+            .mappedAtCreation = 0,
+        };
+        const vertex_buffer = c.wgpuDeviceCreateBuffer(device.?, &buffer_desc) orelse return null;
+
+        const queue = c.wgpuDeviceGetQueue(device.?);
+
+        c.wgpuQueueWriteBuffer(queue, vertex_buffer, 0, &vertices, buffer_size);
+
         var engine: Engine = .{
             .w = w,
             .instance = instance,
             .adapter = adapter.?,
             .device = device.?,
-            .queue = c.wgpuDeviceGetQueue(device.?),
+            .queue = queue,
             .surface = surface,
 
             .format = format,
             .shader = shader,
             .pipeline = pipeline,
+
+            .vertex_buffer = vertex_buffer,
         };
 
         engine.configureSurface(fb_w, fb_h);
@@ -165,6 +207,7 @@ pub const Engine = struct {
     }
 
     pub fn deinit(self: *Engine) void {
+        c.wgpuBufferRelease(self.vertex_buffer);
         c.wgpuRenderPipelineRelease(self.pipeline);
         c.wgpuShaderModuleRelease(self.shader);
         c.wgpuSurfaceUnconfigure(self.surface);
@@ -227,6 +270,7 @@ pub const Engine = struct {
         const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &pass_desc);
 
         c.wgpuRenderPassEncoderSetPipeline(pass, self.pipeline);
+        c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
         c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
 
         c.wgpuRenderPassEncoderEnd(pass);
