@@ -8,10 +8,12 @@ pub const Vertex = extern struct {
 
 pub const Engine = struct {
     const vertices = [_]Vertex{
-        .{ .x = 0.0, .y = 0.5 },
-        .{ .x = -0.5, .y = -0.5 },
-        .{ .x = 0.5, .y = -0.5 },
+        .{ .x = -0.5, .y = -0.5 }, // 0: bottom-left
+        .{ .x = 0.5, .y = -0.5 }, // 1: bottom-right
+        .{ .x = 0.5, .y = 0.5 }, // 2: top-right
+        .{ .x = -0.5, .y = 0.5 }, // 3: top-left
     };
+    const indices = [_]u16{ 0, 1, 2, 2, 3, 0 };
 
     w: *c.GLFWwindow,
 
@@ -26,6 +28,7 @@ pub const Engine = struct {
     pipeline: c.WGPURenderPipeline,
 
     vertex_buffer: c.WGPUBuffer,
+    index_buffer: c.WGPUBuffer,
 
     pub fn init() ?Engine {
         if (c.glfwInit() == 0) {
@@ -171,6 +174,8 @@ pub const Engine = struct {
 
         const pipeline = c.wgpuDeviceCreateRenderPipeline(device.?, &pipeline_desc) orelse return null;
         // --- PIPELINE END ---
+        //
+        const queue = c.wgpuDeviceGetQueue(device.?);
 
         const buffer_size: u64 = @sizeOf(Vertex) * vertices.len;
         const buffer_desc: c.WGPUBufferDescriptor = .{
@@ -181,10 +186,18 @@ pub const Engine = struct {
             .mappedAtCreation = 0,
         };
         const vertex_buffer = c.wgpuDeviceCreateBuffer(device.?, &buffer_desc) orelse return null;
-
-        const queue = c.wgpuDeviceGetQueue(device.?);
-
         c.wgpuQueueWriteBuffer(queue, vertex_buffer, 0, &vertices, buffer_size);
+
+        const index_size: u64 = @sizeOf(u16) * indices.len;
+        const index_desc: c.WGPUBufferDescriptor = .{
+            .nextInChain = null,
+            .label = .{ .data = null, .length = 0 },
+            .usage = c.WGPUBufferUsage_Index | c.WGPUBufferUsage_CopyDst,
+            .size = index_size,
+            .mappedAtCreation = 0,
+        };
+        const index_buffer = c.wgpuDeviceCreateBuffer(device.?, &index_desc) orelse return null;
+        c.wgpuQueueWriteBuffer(queue, index_buffer, 0, &indices, index_size);
 
         var engine: Engine = .{
             .w = w,
@@ -199,6 +212,7 @@ pub const Engine = struct {
             .pipeline = pipeline,
 
             .vertex_buffer = vertex_buffer,
+            .index_buffer = index_buffer,
         };
 
         engine.configureSurface(fb_w, fb_h);
@@ -207,6 +221,7 @@ pub const Engine = struct {
     }
 
     pub fn deinit(self: *Engine) void {
+        c.wgpuBufferRelease(self.index_buffer);
         c.wgpuBufferRelease(self.vertex_buffer);
         c.wgpuRenderPipelineRelease(self.pipeline);
         c.wgpuShaderModuleRelease(self.shader);
@@ -271,7 +286,8 @@ pub const Engine = struct {
 
         c.wgpuRenderPassEncoderSetPipeline(pass, self.pipeline);
         c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-        c.wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+        c.wgpuRenderPassEncoderSetIndexBuffer(pass, self.index_buffer, c.WGPUIndexFormat_Uint16, 0, @sizeOf(u16) * indices.len);
+        c.wgpuRenderPassEncoderDrawIndexed(pass, indices.len, 1, 0, 0, 0);
 
         c.wgpuRenderPassEncoderEnd(pass);
         c.wgpuRenderPassEncoderRelease(pass);
