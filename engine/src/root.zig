@@ -9,10 +9,10 @@ pub const Vertex = extern struct {
 
 pub const Engine = struct {
     const vertices = [_]Vertex{
-        .{ .x = -0.5, .y = -0.5 }, // 0: bottom-left
-        .{ .x = 0.5, .y = -0.5 }, // 1: bottom-right
-        .{ .x = 0.5, .y = 0.5 }, // 2: top-right
-        .{ .x = -0.5, .y = 0.5 }, // 3: top-left
+        .{ .x = 100, .y = 100 }, // 0: bottom-left
+        .{ .x = 300, .y = 100 }, // 1: bottom-right
+        .{ .x = 300, .y = 300 }, // 2: top-right
+        .{ .x = 100, .y = 300 }, // 3: top-left
     };
     const indices = [_]u16{ 0, 1, 2, 2, 3, 0 };
 
@@ -151,9 +151,6 @@ pub const Engine = struct {
         };
 
         const uniform_buffer = c.wgpuDeviceCreateBuffer(device.?, &uniform_desc) orelse return null;
-
-        const initial = math.Mat4.identity();
-        c.wgpuQueueWriteBuffer(queue, uniform_buffer, 0, &initial, @sizeOf(math.Mat4));
 
         const bg_entry: c.WGPUBindGroupEntry = .{
             .nextInChain = null,
@@ -451,6 +448,13 @@ pub const Engine = struct {
         var caps: c.WGPUSurfaceCapabilities = std.mem.zeroes(c.WGPUSurfaceCapabilities);
         _ = c.wgpuSurfaceGetCapabilities(self.surface, self.adapter, &caps);
         defer c.wgpuSurfaceCapabilitiesFreeMembers(caps);
+
+        // Bottom is greater than top here because of top-to-bottom standard
+        // So 0x0 becomes the top-left corner
+        // With higher X we go to right
+        // With higher Y we go to bottom
+        const proj = math.Mat4.ortho(0, @floatFromInt(w), @floatFromInt(h), 0, -1, 1);
+        c.wgpuQueueWriteBuffer(self.queue, self.uniform_buffer, 0, &proj, @sizeOf(math.Mat4));
 
         const config: c.WGPUSurfaceConfiguration = .{
             .nextInChain = null,
