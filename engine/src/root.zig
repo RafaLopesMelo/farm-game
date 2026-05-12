@@ -2,17 +2,36 @@ const std = @import("std");
 pub const c = @import("c");
 const math = @import("math.zig");
 
+const checker_size: u32 = 8;
+const checker = blk: {
+    var pixels: [checker_size * checker_size * 4]u8 = undefined;
+    for (0..checker_size) |y| {
+        for (0..checker_size) |x| {
+            const i = (y * checker_size + x) * 4;
+            const dark = ((x + y) % 2) == 0;
+            pixels[i + 0] = if (dark) 30 else 220;
+            pixels[i + 1] = if (dark) 30 else 220;
+            pixels[i + 2] = if (dark) 30 else 220;
+            pixels[i + 3] = 255;
+        }
+    }
+    break :blk pixels;
+};
+
 pub const Vertex = extern struct {
     x: f32,
     y: f32,
+
+    u: f32,
+    v: f32,
 };
 
 pub const Engine = struct {
     const vertices = [_]Vertex{
-        .{ .x = 100, .y = 100 }, // 0: bottom-left
-        .{ .x = 300, .y = 100 }, // 1: bottom-right
-        .{ .x = 300, .y = 300 }, // 2: top-right
-        .{ .x = 100, .y = 300 }, // 3: top-left
+        .{ .x = 100, .y = 100, .u = 0, .v = 0 }, // 0: bottom-left
+        .{ .x = 300, .y = 100, .u = 1, .v = 0 }, // 1: bottom-right
+        .{ .x = 300, .y = 300, .u = 1, .v = 1 }, // 2: top-right
+        .{ .x = 100, .y = 300, .u = 0, .v = 1 }, // 3: top-left
     };
     const indices = [_]u16{ 0, 1, 2, 2, 3, 0 };
 
@@ -35,6 +54,10 @@ pub const Engine = struct {
 
     bind_group_layout: c.WGPUBindGroupLayout,
     bind_group: c.WGPUBindGroup,
+
+    texture: c.WGPUTexture,
+    texture_view: c.WGPUTextureView,
+    sampler: c.WGPUSampler,
 
     pub fn init() ?Engine {
         if (c.glfwInit() == 0) {
@@ -111,26 +134,105 @@ pub const Engine = struct {
         // --- SURFACE END ---
 
         // --- UNIFORMS START ---
-        const bgl_entry: c.WGPUBindGroupLayoutEntry = .{
+        const tex_desc: c.WGPUTextureDescriptor = .{
             .nextInChain = null,
-            .binding = 0,
-            .visibility = c.WGPUShaderStage_Vertex,
-            .buffer = .{
+            .label = .{ .data = null, .length = 0 },
+            .usage = c.WGPUTextureUsage_TextureBinding | c.WGPUTextureUsage_CopyDst,
+            .dimension = c.WGPUTextureDimension_2D,
+            .size = .{ .height = checker_size, .width = checker_size, .depthOrArrayLayers = 1 },
+            .format = c.WGPUTextureFormat_RGBA8Unorm,
+            .mipLevelCount = 1,
+            .sampleCount = 1,
+            .viewFormatCount = 0,
+            .viewFormats = null,
+        };
+        const texture = c.wgpuDeviceCreateTexture(device.?, &tex_desc) orelse return null;
+
+        const dest: c.WGPUTexelCopyTextureInfo = .{
+            .texture = texture,
+            .mipLevel = 0,
+            .origin = .{ .x = 0, .y = 0, .z = 0 },
+            .aspect = c.WGPUTextureAspect_All,
+        };
+
+        const layout: c.WGPUTexelCopyBufferLayout = .{
+            .offset = 0,
+            .bytesPerRow = checker_size * 4,
+            .rowsPerImage = checker_size,
+        };
+
+        const extent: c.WGPUExtent3D = .{
+            .width = checker_size,
+            .height = checker_size,
+            .depthOrArrayLayers = 1,
+        };
+
+        c.wgpuQueueWriteTexture(queue, &dest, &checker, checker.len, &layout, &extent);
+
+        const texture_view = c.wgpuTextureCreateView(texture, null) orelse return null;
+
+        const sampler_desc: c.WGPUSamplerDescriptor = .{
+            .nextInChain = null,
+            .label = .{ .data = null, .length = 0 },
+            .addressModeU = c.WGPUAddressMode_ClampToEdge,
+            .addressModeV = c.WGPUAddressMode_ClampToEdge,
+            .addressModeW = c.WGPUAddressMode_ClampToEdge,
+            .magFilter = c.WGPUFilterMode_Nearest,
+            .minFilter = c.WGPUFilterMode_Nearest,
+            .mipmapFilter = c.WGPUMipmapFilterMode_Nearest,
+            .lodMinClamp = 0,
+            .lodMaxClamp = 1,
+            .compare = c.WGPUCompareFunction_Undefined,
+            .maxAnisotropy = 1,
+        };
+        const sampler = c.wgpuDeviceCreateSampler(device.?, &sampler_desc) orelse return null;
+
+        const bgl_entries = [_]c.WGPUBindGroupLayoutEntry{
+            .{
                 .nextInChain = null,
-                .type = c.WGPUBufferBindingType_Uniform,
-                .hasDynamicOffset = 0,
-                .minBindingSize = @sizeOf(math.Mat4),
+                .binding = 0,
+                .visibility = c.WGPUShaderStage_Vertex,
+                .buffer = .{
+                    .nextInChain = null,
+                    .type = c.WGPUBufferBindingType_Uniform,
+                    .hasDynamicOffset = 0,
+                    .minBindingSize = @sizeOf(math.Mat4),
+                },
+                .sampler = std.mem.zeroes(c.WGPUSamplerBindingLayout),
+                .texture = std.mem.zeroes(c.WGPUTextureBindingLayout),
+                .storageTexture = std.mem.zeroes(c.WGPUStorageTextureBindingLayout),
             },
-            .sampler = std.mem.zeroes(c.WGPUSamplerBindingLayout),
-            .texture = std.mem.zeroes(c.WGPUTextureBindingLayout),
-            .storageTexture = std.mem.zeroes(c.WGPUStorageTextureBindingLayout),
+            .{
+                .nextInChain = null,
+                .binding = 1,
+                .visibility = c.WGPUShaderStage_Fragment,
+                .buffer = std.mem.zeroes(c.WGPUBufferBindingLayout),
+                .texture = .{
+                    .nextInChain = null,
+                    .sampleType = c.WGPUTextureSampleType_Float,
+                    .viewDimension = c.WGPUTextureViewDimension_2D,
+                    .multisampled = 0,
+                },
+            },
+            .{
+                .nextInChain = null,
+                .binding = 2,
+                .visibility = c.WGPUShaderStage_Fragment,
+                .buffer = std.mem.zeroes(c.WGPUBufferBindingLayout),
+                .sampler = .{
+                    .nextInChain = null,
+                    .type = c.WGPUSamplerBindingType_Filtering,
+                },
+                .texture = std.mem.zeroes(c.WGPUTextureBindingLayout),
+                .storageTexture = std.mem.zeroes(c.WGPUStorageTextureBindingLayout),
+            },
         };
 
         const bgl_desc: c.WGPUBindGroupLayoutDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
-            .entryCount = 1,
-            .entries = &bgl_entry,
+            .entryCount = bgl_entries.len,
+            .entries = &bgl_entries,
         };
 
         const bind_group_layout = c.wgpuDeviceCreateBindGroupLayout(device.?, &bgl_desc) orelse return null;
@@ -152,22 +254,42 @@ pub const Engine = struct {
 
         const uniform_buffer = c.wgpuDeviceCreateBuffer(device.?, &uniform_desc) orelse return null;
 
-        const bg_entry: c.WGPUBindGroupEntry = .{
-            .nextInChain = null,
-            .binding = 0,
-            .buffer = uniform_buffer,
-            .offset = 0,
-            .size = @sizeOf(math.Mat4),
-            .sampler = null,
-            .textureView = null,
+        const bg_entries = [_]c.WGPUBindGroupEntry{
+            .{
+                .nextInChain = null,
+                .binding = 0,
+                .buffer = uniform_buffer,
+                .offset = 0,
+                .size = @sizeOf(math.Mat4),
+                .sampler = null,
+                .textureView = null,
+            },
+            .{
+                .nextInChain = null,
+                .binding = 1,
+                .buffer = null,
+                .offset = 0,
+                .size = 0,
+                .sampler = null,
+                .textureView = texture_view,
+            },
+            .{
+                .nextInChain = null,
+                .binding = 2,
+                .buffer = null,
+                .offset = 0,
+                .size = 0,
+                .sampler = sampler,
+                .textureView = null,
+            },
         };
 
         const bg_desc: c.WGPUBindGroupDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
             .layout = bind_group_layout,
-            .entryCount = 1,
-            .entries = &bg_entry,
+            .entryCount = bg_entries.len,
+            .entries = &bg_entries,
         };
 
         const bind_group = c.wgpuDeviceCreateBindGroup(device.?, &bg_desc) orelse return null;
@@ -213,17 +335,24 @@ pub const Engine = struct {
         multisample.count = 1;
         multisample.mask = 0xFFFFFF;
 
-        const vertex_attr: c.WGPUVertexAttribute = .{
-            .format = c.WGPUVertexFormat_Float32x2,
-            .offset = 0,
-            .shaderLocation = 0,
+        const vertex_attrs = [_]c.WGPUVertexAttribute{
+            .{
+                .format = c.WGPUVertexFormat_Float32x2,
+                .offset = 0,
+                .shaderLocation = 0,
+            },
+            .{
+                .format = c.WGPUVertexFormat_Float32x2,
+                .offset = @offsetOf(Vertex, "u"),
+                .shaderLocation = 1,
+            },
         };
 
         const vertex_layout: c.WGPUVertexBufferLayout = .{
             .arrayStride = @sizeOf(Vertex),
             .stepMode = c.WGPUVertexStepMode_Vertex,
-            .attributeCount = 1,
-            .attributes = &vertex_attr,
+            .attributeCount = vertex_attrs.len,
+            .attributes = &vertex_attrs,
         };
 
         const pipeline_desc: c.WGPURenderPipelineDescriptor = .{
@@ -289,6 +418,10 @@ pub const Engine = struct {
             .bind_group = bind_group,
 
             .uniform_buffer = uniform_buffer,
+
+            .texture = texture,
+            .texture_view = texture_view,
+            .sampler = sampler,
         };
 
         engine.configureSurface(fb_w, fb_h);
@@ -297,6 +430,10 @@ pub const Engine = struct {
     }
 
     pub fn deinit(self: *Engine) void {
+        c.wgpuTextureRelease(self.texture);
+        c.wgpuTextureViewRelease(self.texture_view);
+        c.wgpuSamplerRelease(self.sampler);
+
         c.wgpuBindGroupRelease(self.bind_group);
         c.wgpuBindGroupLayoutRelease(self.bind_group_layout);
 
