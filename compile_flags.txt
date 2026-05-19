@@ -1,2 +1,3 @@
 -Iengine/vendor/wgpu/include
+-Iengine/vendor/stb
 -I/usr/include

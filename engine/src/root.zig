@@ -2,22 +2,6 @@ const std = @import("std");
 pub const c = @import("c");
 const math = @import("math.zig");
 
-const checker_size: u32 = 8;
-const checker = blk: {
-    var pixels: [checker_size * checker_size * 4]u8 = undefined;
-    for (0..checker_size) |y| {
-        for (0..checker_size) |x| {
-            const i = (y * checker_size + x) * 4;
-            const dark = ((x + y) % 2) == 0;
-            pixels[i + 0] = if (dark) 30 else 220;
-            pixels[i + 1] = if (dark) 30 else 220;
-            pixels[i + 2] = if (dark) 30 else 220;
-            pixels[i + 3] = 255;
-        }
-    }
-    break :blk pixels;
-};
-
 pub const Vertex = extern struct {
     x: f32,
     y: f32,
@@ -134,12 +118,18 @@ pub const Engine = struct {
         // --- SURFACE END ---
 
         // --- UNIFORMS START ---
+        var img_w: c_int = 0;
+        var img_h: c_int = 0;
+        var img_ch: c_int = 0;
+        const img = c.stbi_load("assets/tile.png", &img_w, &img_h, &img_ch, 4);
+        defer c.stbi_image_free(img);
+
         const tex_desc: c.WGPUTextureDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
             .usage = c.WGPUTextureUsage_TextureBinding | c.WGPUTextureUsage_CopyDst,
             .dimension = c.WGPUTextureDimension_2D,
-            .size = .{ .height = checker_size, .width = checker_size, .depthOrArrayLayers = 1 },
+            .size = .{ .height = @intCast(img_h), .width = @intCast(img_w), .depthOrArrayLayers = 1 },
             .format = c.WGPUTextureFormat_RGBA8Unorm,
             .mipLevelCount = 1,
             .sampleCount = 1,
@@ -157,17 +147,17 @@ pub const Engine = struct {
 
         const layout: c.WGPUTexelCopyBufferLayout = .{
             .offset = 0,
-            .bytesPerRow = checker_size * 4,
-            .rowsPerImage = checker_size,
+            .bytesPerRow = @intCast(img_w * 4),
+            .rowsPerImage = @intCast(img_h),
         };
 
         const extent: c.WGPUExtent3D = .{
-            .width = checker_size,
-            .height = checker_size,
+            .width = @intCast(img_w),
+            .height = @intCast(img_h),
             .depthOrArrayLayers = 1,
         };
 
-        c.wgpuQueueWriteTexture(queue, &dest, &checker, checker.len, &layout, &extent);
+        c.wgpuQueueWriteTexture(queue, &dest, img, @intCast(img_w * img_h * 4), &layout, &extent);
 
         const texture_view = c.wgpuTextureCreateView(texture, null) orelse return null;
 

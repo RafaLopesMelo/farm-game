@@ -10,3 +10,7 @@
 
 #include <webgpu/webgpu.h>
 #include <webgpu/wgpu.h>
+
+// STB
+
+#include <stb_image.h>

@@ -14,15 +14,20 @@ pub fn build(b: *std.Build) void {
 
     // Rust Libraries Compatibility
     mod.linkSystemLibrary("gcc_s", .{});
-    
+
     // GLFW
     mod.linkSystemLibrary("glfw", .{});
 
     // WGPU
     mod.addIncludePath(b.path("vendor/wgpu/include"));
     mod.addLibraryPath(b.path("vendor/wgpu/lib"));
-    mod.linkSystemLibrary("wgpu_native", .{
-        .preferred_link_mode = .static
+    mod.linkSystemLibrary("wgpu_native", .{ .preferred_link_mode = .static });
+
+    // STB
+    mod.addIncludePath(b.path("vendor/stb"));
+    mod.addCSourceFile(.{
+        .file = b.path("vendor/stb/stb_image.c"),
+        .flags = &.{},
     });
 
     // Translate C
@@ -33,6 +38,7 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
     translate_c.addIncludePath(b.path("vendor/wgpu/include"));
+    translate_c.addIncludePath(b.path("vendor/stb"));
 
     const c_mod = translate_c.createModule();
     mod.addImport("c", c_mod);
@@ -42,5 +48,5 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
 
     const check_step = b.step("check", "Type-check the engine");
-    check_step.dependOn(&lib_tests.step);  // compile-only, not run
+    check_step.dependOn(&lib_tests.step); // compile-only, not run
 }
