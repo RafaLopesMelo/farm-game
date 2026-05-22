@@ -11,14 +11,6 @@ pub const Vertex = extern struct {
 };
 
 pub const Engine = struct {
-    const vertices = [_]Vertex{
-        .{ .x = 100, .y = 100, .u = 0, .v = 0 }, // 0: bottom-left
-        .{ .x = 300, .y = 100, .u = 1, .v = 0 }, // 1: bottom-right
-        .{ .x = 300, .y = 300, .u = 1, .v = 1 }, // 2: top-right
-        .{ .x = 100, .y = 300, .u = 0, .v = 1 }, // 3: top-left
-    };
-    const indices = [_]u16{ 0, 1, 2, 2, 3, 0 };
-
     w: *c.GLFWwindow,
 
     instance: c.WGPUInstance,
@@ -42,6 +34,10 @@ pub const Engine = struct {
     texture: c.WGPUTexture,
     texture_view: c.WGPUTextureView,
     sampler: c.WGPUSampler,
+
+    vertices: std.ArrayList(Vertex),
+    indices: std.ArrayList(u16),
+    allocator: std.mem.Allocator,
 
     pub fn init() ?Engine {
         if (c.glfwInit() == 0) {
@@ -367,7 +363,20 @@ pub const Engine = struct {
         const pipeline = c.wgpuDeviceCreateRenderPipeline(device.?, &pipeline_desc) orelse return null;
         // --- PIPELINE END ---
 
-        const buffer_size: u64 = @sizeOf(Vertex) * vertices.len;
+        const allocator = std.heap.page_allocator;
+
+        var vertices: std.ArrayList(Vertex) = .empty;
+        vertices.appendSlice(allocator, &.{
+            .{ .x = 100, .y = 100, .u = 0, .v = 0 }, // 0: bottom-left
+            .{ .x = 300, .y = 100, .u = 1, .v = 0 }, // 1: bottom-right
+            .{ .x = 300, .y = 300, .u = 1, .v = 1 }, // 2: top-right
+            .{ .x = 100, .y = 300, .u = 0, .v = 1 }, // 3: top-left
+        }) catch return null;
+
+        var indices: std.ArrayList(u16) = .empty;
+        indices.appendSlice(allocator, &.{ 0, 1, 2, 2, 3, 0 }) catch return null;
+
+        const buffer_size: u64 = @sizeOf(Vertex) * vertices.items.len;
         const buffer_desc: c.WGPUBufferDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
@@ -376,9 +385,9 @@ pub const Engine = struct {
             .mappedAtCreation = 0,
         };
         const vertex_buffer = c.wgpuDeviceCreateBuffer(device.?, &buffer_desc) orelse return null;
-        c.wgpuQueueWriteBuffer(queue, vertex_buffer, 0, &vertices, buffer_size);
+        c.wgpuQueueWriteBuffer(queue, vertex_buffer, 0, vertices.items.ptr, buffer_size);
 
-        const index_size: u64 = @sizeOf(u16) * indices.len;
+        const index_size: u64 = @sizeOf(u16) * indices.items.len;
         const index_desc: c.WGPUBufferDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
@@ -387,7 +396,7 @@ pub const Engine = struct {
             .mappedAtCreation = 0,
         };
         const index_buffer = c.wgpuDeviceCreateBuffer(device.?, &index_desc) orelse return null;
-        c.wgpuQueueWriteBuffer(queue, index_buffer, 0, &indices, index_size);
+        c.wgpuQueueWriteBuffer(queue, index_buffer, 0, indices.items.ptr, index_size);
 
         var engine: Engine = .{
             .w = w,
@@ -412,6 +421,10 @@ pub const Engine = struct {
             .texture = texture,
             .texture_view = texture_view,
             .sampler = sampler,
+
+            .vertices = vertices,
+            .indices = indices,
+            .allocator = allocator,
         };
 
         engine.configureSurface(fb_w, fb_h);
@@ -420,6 +433,9 @@ pub const Engine = struct {
     }
 
     pub fn deinit(self: *Engine) void {
+        self.indices.deinit(self.allocator);
+        self.vertices.deinit(self.allocator);
+
         c.wgpuTextureRelease(self.texture);
         c.wgpuTextureViewRelease(self.texture_view);
         c.wgpuSamplerRelease(self.sampler);
@@ -495,9 +511,9 @@ pub const Engine = struct {
 
         c.wgpuRenderPassEncoderSetPipeline(pass, self.pipeline);
         c.wgpuRenderPassEncoderSetBindGroup(pass, 0, self.bind_group, 0, null);
-        c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * vertices.len);
-        c.wgpuRenderPassEncoderSetIndexBuffer(pass, self.index_buffer, c.WGPUIndexFormat_Uint16, 0, @sizeOf(u16) * indices.len);
-        c.wgpuRenderPassEncoderDrawIndexed(pass, indices.len, 1, 0, 0, 0);
+        c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * self.vertices.items.len);
+        c.wgpuRenderPassEncoderSetIndexBuffer(pass, self.index_buffer, c.WGPUIndexFormat_Uint16, 0, @sizeOf(u16) * self.indices.items.len);
+        c.wgpuRenderPassEncoderDrawIndexed(pass, @intCast(self.indices.items.len), 1, 0, 0, 0);
 
         c.wgpuRenderPassEncoderEnd(pass);
         c.wgpuRenderPassEncoderRelease(pass);
@@ -597,6 +613,10 @@ pub const Engine = struct {
         };
         c.wgpuSurfaceConfigure(self.surface, &config);
     }
+
+    pub fn beginFrame() void {}
+
+    pub fn endFrame() void {}
 };
 
 test "compile-check Engine" {
