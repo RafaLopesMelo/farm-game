@@ -2,6 +2,15 @@ const std = @import("std");
 pub const c = @import("c");
 const math = @import("math.zig");
 
+const max_sprites = 1024;
+
+pub const UvRect = struct {
+    u0: f32,
+    v0: f32,
+    u1: f32,
+    v1: f32,
+};
+
 pub const Vertex = extern struct {
     x: f32,
     y: f32,
@@ -365,18 +374,7 @@ pub const Engine = struct {
 
         const allocator = std.heap.page_allocator;
 
-        var vertices: std.ArrayList(Vertex) = .empty;
-        vertices.appendSlice(allocator, &.{
-            .{ .x = 100, .y = 100, .u = 0, .v = 0 }, // 0: bottom-left
-            .{ .x = 300, .y = 100, .u = 1, .v = 0 }, // 1: bottom-right
-            .{ .x = 300, .y = 300, .u = 1, .v = 1 }, // 2: top-right
-            .{ .x = 100, .y = 300, .u = 0, .v = 1 }, // 3: top-left
-        }) catch return null;
-
-        var indices: std.ArrayList(u16) = .empty;
-        indices.appendSlice(allocator, &.{ 0, 1, 2, 2, 3, 0 }) catch return null;
-
-        const buffer_size: u64 = @sizeOf(Vertex) * vertices.items.len;
+        const buffer_size: u64 = @sizeOf(Vertex) * 4 * max_sprites;
         const buffer_desc: c.WGPUBufferDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
@@ -385,9 +383,8 @@ pub const Engine = struct {
             .mappedAtCreation = 0,
         };
         const vertex_buffer = c.wgpuDeviceCreateBuffer(device.?, &buffer_desc) orelse return null;
-        c.wgpuQueueWriteBuffer(queue, vertex_buffer, 0, vertices.items.ptr, buffer_size);
 
-        const index_size: u64 = @sizeOf(u16) * indices.items.len;
+        const index_size: u64 = @sizeOf(u16) * 6 * max_sprites;
         const index_desc: c.WGPUBufferDescriptor = .{
             .nextInChain = null,
             .label = .{ .data = null, .length = 0 },
@@ -396,7 +393,9 @@ pub const Engine = struct {
             .mappedAtCreation = 0,
         };
         const index_buffer = c.wgpuDeviceCreateBuffer(device.?, &index_desc) orelse return null;
-        c.wgpuQueueWriteBuffer(queue, index_buffer, 0, indices.items.ptr, index_size);
+
+        const vertices = std.ArrayList(Vertex).initCapacity(allocator, 4 * max_sprites) catch return null;
+        const indices = std.ArrayList(u16).initCapacity(allocator, 6 * max_sprites) catch return null;
 
         var engine: Engine = .{
             .w = w,
@@ -467,64 +466,17 @@ pub const Engine = struct {
 
         while (c.glfwWindowShouldClose(self.w) == 0) {
             c.glfwPollEvents();
-            self.render();
+            self.beginFrame();
+            // draw a 5×5 grid to prove the batch works
+            var row: f32 = 0;
+            while (row < 10) : (row += 1) {
+                var col: f32 = 0;
+                while (col < 5) : (col += 1) {
+                    self.drawSprite(col * 64, row * 64, 64, 64, .{ .u0 = 0, .v0 = 0, .u1 = 1, .v1 = 1 });
+                }
+            }
+            self.endFrame();
         }
-    }
-
-    pub fn render(self: *Engine) void {
-        var st: c.WGPUSurfaceTexture = std.mem.zeroes(c.WGPUSurfaceTexture);
-        c.wgpuSurfaceGetCurrentTexture(self.surface, &st);
-
-        if (st.status != c.WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal and
-            st.status != c.WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal)
-        {
-            return;
-        }
-
-        const view = c.wgpuTextureCreateView(st.texture, null) orelse return;
-        defer c.wgpuTextureViewRelease(view);
-
-        const encoder = c.wgpuDeviceCreateCommandEncoder(self.device, null) orelse return;
-        defer c.wgpuCommandEncoderRelease(encoder);
-
-        const color_attachment: c.WGPURenderPassColorAttachment = .{
-            .nextInChain = null,
-            .view = view,
-            .depthSlice = c.WGPU_DEPTH_SLICE_UNDEFINED,
-            .resolveTarget = null,
-            .loadOp = c.WGPULoadOp_Clear,
-            .storeOp = c.WGPUStoreOp_Store,
-            .clearValue = .{ .r = 0.1, .g = 0.2, .b = 0.4, .a = 1.0 },
-        };
-
-        const pass_desc: c.WGPURenderPassDescriptor = .{
-            .nextInChain = null,
-            .label = .{ .data = null, .length = 0 },
-            .colorAttachmentCount = 1,
-            .colorAttachments = &color_attachment,
-            .depthStencilAttachment = null,
-            .occlusionQuerySet = null,
-            .timestampWrites = null,
-        };
-
-        const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &pass_desc);
-
-        c.wgpuRenderPassEncoderSetPipeline(pass, self.pipeline);
-        c.wgpuRenderPassEncoderSetBindGroup(pass, 0, self.bind_group, 0, null);
-        c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * self.vertices.items.len);
-        c.wgpuRenderPassEncoderSetIndexBuffer(pass, self.index_buffer, c.WGPUIndexFormat_Uint16, 0, @sizeOf(u16) * self.indices.items.len);
-        c.wgpuRenderPassEncoderDrawIndexed(pass, @intCast(self.indices.items.len), 1, 0, 0, 0);
-
-        c.wgpuRenderPassEncoderEnd(pass);
-        c.wgpuRenderPassEncoderRelease(pass);
-
-        const cmd = c.wgpuCommandEncoderFinish(encoder, null) orelse return;
-        defer c.wgpuCommandBufferRelease(cmd);
-
-        c.wgpuQueueSubmit(self.queue, 1, &cmd);
-        _ = c.wgpuSurfacePresent(self.surface);
-
-        c.wgpuTextureRelease(st.texture);
     }
 
     fn onAdapter(
@@ -614,9 +566,88 @@ pub const Engine = struct {
         c.wgpuSurfaceConfigure(self.surface, &config);
     }
 
-    pub fn beginFrame() void {}
+    pub fn beginFrame(self: *Engine) void {
+        self.vertices.clearRetainingCapacity();
+        self.indices.clearRetainingCapacity();
+    }
 
-    pub fn endFrame() void {}
+    pub fn drawSprite(self: *Engine, x: f32, y: f32, w: f32, h: f32, uv: UvRect) void {
+        const base: u16 = @intCast(self.vertices.items.len);
+
+        self.vertices.appendSliceAssumeCapacity(&.{
+            .{ .x = x, .y = y, .u = uv.u0, .v = uv.v0 }, // top-left
+            .{ .x = x + w, .y = y, .u = uv.u1, .v = uv.v0 }, // top-right
+            .{ .x = x + w, .y = y + h, .u = uv.u1, .v = uv.v1 }, // bottom-right
+            .{ .x = x, .y = y + h, .u = uv.u0, .v = uv.v1 }, // bottom-left
+        });
+
+        self.indices.appendSliceAssumeCapacity(&.{
+            base,     base + 1, base + 2,
+            base + 2, base + 3, base,
+        });
+    }
+
+    pub fn endFrame(self: *Engine) void {
+        const buffer_size: u64 = @sizeOf(Vertex) * 4 * max_sprites;
+        c.wgpuQueueWriteBuffer(self.queue, self.vertex_buffer, 0, self.vertices.items.ptr, buffer_size);
+
+        const index_size: u64 = @sizeOf(u16) * 6 * max_sprites;
+        c.wgpuQueueWriteBuffer(self.queue, self.index_buffer, 0, self.indices.items.ptr, index_size);
+
+        var st: c.WGPUSurfaceTexture = std.mem.zeroes(c.WGPUSurfaceTexture);
+        c.wgpuSurfaceGetCurrentTexture(self.surface, &st);
+
+        if (st.status != c.WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal and
+            st.status != c.WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal)
+        {
+            return;
+        }
+
+        const view = c.wgpuTextureCreateView(st.texture, null) orelse return;
+        defer c.wgpuTextureViewRelease(view);
+
+        const encoder = c.wgpuDeviceCreateCommandEncoder(self.device, null) orelse return;
+        defer c.wgpuCommandEncoderRelease(encoder);
+
+        const color_attachment: c.WGPURenderPassColorAttachment = .{
+            .nextInChain = null,
+            .view = view,
+            .depthSlice = c.WGPU_DEPTH_SLICE_UNDEFINED,
+            .resolveTarget = null,
+            .loadOp = c.WGPULoadOp_Clear,
+            .storeOp = c.WGPUStoreOp_Store,
+            .clearValue = .{ .r = 0.1, .g = 0.2, .b = 0.4, .a = 1.0 },
+        };
+
+        const pass_desc: c.WGPURenderPassDescriptor = .{
+            .nextInChain = null,
+            .label = .{ .data = null, .length = 0 },
+            .colorAttachmentCount = 1,
+            .colorAttachments = &color_attachment,
+            .depthStencilAttachment = null,
+            .occlusionQuerySet = null,
+            .timestampWrites = null,
+        };
+
+        const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &pass_desc);
+
+        c.wgpuRenderPassEncoderSetPipeline(pass, self.pipeline);
+        c.wgpuRenderPassEncoderSetBindGroup(pass, 0, self.bind_group, 0, null);
+        c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * self.vertices.items.len);
+        c.wgpuRenderPassEncoderSetIndexBuffer(pass, self.index_buffer, c.WGPUIndexFormat_Uint16, 0, @sizeOf(u16) * self.indices.items.len);
+        c.wgpuRenderPassEncoderDrawIndexed(pass, @intCast(self.indices.items.len), 1, 0, 0, 0);
+
+        c.wgpuRenderPassEncoderEnd(pass);
+        c.wgpuRenderPassEncoderRelease(pass);
+
+        const cmd = c.wgpuCommandEncoderFinish(encoder, null) orelse return;
+        defer c.wgpuCommandBufferRelease(cmd);
+
+        c.wgpuQueueSubmit(self.queue, 1, &cmd);
+        _ = c.wgpuSurfacePresent(self.surface);
+
+        c.wgpuTextureRelease(st.texture);
+    }
 };
 
 test "compile-check Engine" {
