@@ -2,8 +2,13 @@ const std = @import("std");
 pub const c = @import("c");
 const math = @import("math.zig");
 const texture = @import("texture.zig");
+const input = @import("input.zig");
 
 const max_sprites = 1024;
+
+var player_x: f32 = 100;
+var player_y: f32 = 100;
+const speed: f32 = 4;
 
 pub const UvRect = struct {
     u0: f32,
@@ -45,6 +50,8 @@ pub const Engine = struct {
     vertices: std.ArrayList(Vertex),
     indices: std.ArrayList(u16),
     allocator: std.mem.Allocator,
+
+    input: input.Input,
 
     pub fn init() ?Engine {
         if (c.glfwInit() == 0) {
@@ -329,6 +336,8 @@ pub const Engine = struct {
             .vertices = vertices,
             .indices = indices,
             .allocator = allocator,
+
+            .input = input.Input.init(),
         };
 
         engine.configureSurface(fb_w, fb_h);
@@ -365,17 +374,23 @@ pub const Engine = struct {
     pub fn run(self: *Engine) void {
         c.glfwSetWindowUserPointer(self.w, self);
         _ = c.glfwSetFramebufferSizeCallback(self.w, onFramebufferSize);
+        _ = c.glfwSetKeyCallback(self.w, Engine.onKey);
 
         while (c.glfwWindowShouldClose(self.w) == 0) {
             c.glfwPollEvents();
             self.beginFrame();
-            // draw a 5×5 grid to prove the batch works
+
+            if (self.input.isKeyDown(c.GLFW_KEY_W)) player_y -= speed;
+            if (self.input.isKeyDown(c.GLFW_KEY_S)) player_y += speed;
+            if (self.input.isKeyDown(c.GLFW_KEY_A)) player_x -= speed;
+            if (self.input.isKeyDown(c.GLFW_KEY_D)) player_x += speed;
+
             var row: f32 = 0;
             while (row < 10) : (row += 1) {
                 var col: f32 = 0;
                 while (col < 5) : (col += 1) {
                     const u_offset: f32 = if (@rem(col, 2.0) == 0.0) 0.0 else 0.5;
-                    self.drawSprite(col * 64, row * 64, 64, 64, .{
+                    self.drawSprite(col * 64 + player_x, row * 64 + player_y, 64, 64, .{
                         .u0 = u_offset,
                         .v0 = 0,
                         .u1 = u_offset + 0.5,
@@ -445,6 +460,14 @@ pub const Engine = struct {
         self.configureSurface(w, h);
     }
 
+    fn onKey(window: ?*c.GLFWwindow, key: c_int, _: c_int, action: c_int, _: c_int) callconv(.c) void {
+        const self: *Engine = @ptrCast(@alignCast(
+            c.glfwGetWindowUserPointer(window).?,
+        ));
+
+        self.input.handleKey(key, action);
+    }
+
     pub fn configureSurface(self: *Engine, w: c_int, h: c_int) void {
         if (w <= 0 or h <= 0) return;
 
@@ -496,10 +519,10 @@ pub const Engine = struct {
     }
 
     pub fn endFrame(self: *Engine) void {
-        const buffer_size: u64 = @sizeOf(Vertex) * 4 * max_sprites;
+        const buffer_size: u64 = @sizeOf(Vertex) * self.vertices.items.len;
         c.wgpuQueueWriteBuffer(self.queue, self.vertex_buffer, 0, self.vertices.items.ptr, buffer_size);
 
-        const index_size: u64 = @sizeOf(u16) * 6 * max_sprites;
+        const index_size: u64 = @sizeOf(u16) * self.indices.items.len;
         c.wgpuQueueWriteBuffer(self.queue, self.index_buffer, 0, self.indices.items.ptr, index_size);
 
         var st: c.WGPUSurfaceTexture = std.mem.zeroes(c.WGPUSurfaceTexture);
@@ -540,7 +563,7 @@ pub const Engine = struct {
         const pass = c.wgpuCommandEncoderBeginRenderPass(encoder, &pass_desc);
 
         c.wgpuRenderPassEncoderSetPipeline(pass, self.pipeline);
-        c.wgpuRenderPassEncoderSetBindGroup(pass, 0, self.texture.get_bind_group(), 0, null);
+        c.wgpuRenderPassEncoderSetBindGroup(pass, 0, self.texture.bind_group, 0, null);
         c.wgpuRenderPassEncoderSetVertexBuffer(pass, 0, self.vertex_buffer, 0, @sizeOf(Vertex) * self.vertices.items.len);
         c.wgpuRenderPassEncoderSetIndexBuffer(pass, self.index_buffer, c.WGPUIndexFormat_Uint16, 0, @sizeOf(u16) * self.indices.items.len);
         c.wgpuRenderPassEncoderDrawIndexed(pass, @intCast(self.indices.items.len), 1, 0, 0, 0);

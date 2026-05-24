@@ -125,10 +125,6 @@ pub const Texture = struct {
         };
     }
 
-    pub fn get_bind_group(self: *Texture) c.WGPUBindGroup {
-        return self.bind_group;
-    }
-
     pub fn deinit(self: *Texture) void {
         c.wgpuTextureRelease(self.texture);
         c.wgpuTextureViewRelease(self.view);
