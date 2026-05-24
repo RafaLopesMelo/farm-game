@@ -7,8 +7,8 @@ pub const Input = struct {
         return .{ .keys_down = .{false} ** (c.GLFW_KEY_LAST + 1) };
     }
 
-    pub fn isKeyDown(self: *const Input, key: c_int) bool {
-        return self.keys_down[@intCast(key)];
+    pub fn isKeyDown(self: *const Input, key: Key) bool {
+        return self.keys_down[@intCast(@intFromEnum(key))];
     }
 
     pub fn handleKey(self: *Input, key: c_int, action: c_int) void {
@@ -24,4 +24,11 @@ pub const Input = struct {
             return;
         }
     }
+};
+
+pub const Key = enum(c_int) {
+    w = c.GLFW_KEY_W,
+    a = c.GLFW_KEY_A,
+    s = c.GLFW_KEY_S,
+    d = c.GLFW_KEY_D,
 };

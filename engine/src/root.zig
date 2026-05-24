@@ -4,11 +4,9 @@ const math = @import("math.zig");
 const texture = @import("texture.zig");
 const input = @import("input.zig");
 
-const max_sprites = 1024;
+pub const Key = @import("input.zig").Key;
 
-var player_x: f32 = 100;
-var player_y: f32 = 100;
-const speed: f32 = 4;
+const max_sprites = 1024;
 
 pub const UvRect = struct {
     u0: f32,
@@ -375,31 +373,14 @@ pub const Engine = struct {
         c.glfwSetWindowUserPointer(self.w, self);
         _ = c.glfwSetFramebufferSizeCallback(self.w, onFramebufferSize);
         _ = c.glfwSetKeyCallback(self.w, Engine.onKey);
+    }
 
-        while (c.glfwWindowShouldClose(self.w) == 0) {
-            c.glfwPollEvents();
-            self.beginFrame();
+    pub fn shouldClose(self: *Engine) bool {
+        return c.glfwWindowShouldClose(self.w) == 0;
+    }
 
-            if (self.input.isKeyDown(c.GLFW_KEY_W)) player_y -= speed;
-            if (self.input.isKeyDown(c.GLFW_KEY_S)) player_y += speed;
-            if (self.input.isKeyDown(c.GLFW_KEY_A)) player_x -= speed;
-            if (self.input.isKeyDown(c.GLFW_KEY_D)) player_x += speed;
-
-            var row: f32 = 0;
-            while (row < 10) : (row += 1) {
-                var col: f32 = 0;
-                while (col < 5) : (col += 1) {
-                    const u_offset: f32 = if (@rem(col, 2.0) == 0.0) 0.0 else 0.5;
-                    self.drawSprite(col * 64 + player_x, row * 64 + player_y, 64, 64, .{
-                        .u0 = u_offset,
-                        .v0 = 0,
-                        .u1 = u_offset + 0.5,
-                        .v1 = 1,
-                    });
-                }
-            }
-            self.endFrame();
-        }
+    pub fn pollEvents(_: *Engine) void {
+        c.glfwPollEvents();
     }
 
     fn onAdapter(
