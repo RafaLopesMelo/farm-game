@@ -1,9 +1,10 @@
 const std = @import("std");
 const engine = @import("engine");
+const c = @import("engine").c;
 
 var player_x: f32 = 100;
 var player_y: f32 = 100;
-const speed: f32 = 4;
+const speed: f64 = 1024;
 
 pub fn main() !void {
     var e = engine.Engine.init().?;
@@ -14,10 +15,12 @@ pub fn main() !void {
         e.pollEvents();
         e.beginFrame();
 
-        if (e.input.isKeyDown(engine.Key.w)) player_y -= speed;
-        if (e.input.isKeyDown(engine.Key.s)) player_y += speed;
-        if (e.input.isKeyDown(engine.Key.a)) player_x -= speed;
-        if (e.input.isKeyDown(engine.Key.d)) player_x += speed;
+        const delta = e.getDelta();
+
+        if (e.input.isKeyDown(engine.Key.w)) player_y -= @floatCast(speed * delta);
+        if (e.input.isKeyDown(engine.Key.s)) player_y += @floatCast(speed * delta);
+        if (e.input.isKeyDown(engine.Key.a)) player_x -= @floatCast(speed * delta);
+        if (e.input.isKeyDown(engine.Key.d)) player_x += @floatCast(speed * delta);
 
         var row: f32 = 0;
         while (row < 10) : (row += 1) {

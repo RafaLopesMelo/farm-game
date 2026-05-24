@@ -51,6 +51,15 @@ pub const Engine = struct {
 
     input: input.Input,
 
+    last_frame: f64,
+
+    pub fn getDelta(self: *Engine) f64 {
+        const now = c.glfwGetTime();
+        const dt = now - self.last_frame;
+        self.last_frame = now;
+        return dt;
+    }
+
     pub fn init() ?Engine {
         if (c.glfwInit() == 0) {
             return null;
@@ -336,6 +345,7 @@ pub const Engine = struct {
             .allocator = allocator,
 
             .input = input.Input.init(),
+            .last_frame = c.glfwGetTime(),
         };
 
         engine.configureSurface(fb_w, fb_h);
