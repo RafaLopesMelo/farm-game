@@ -22,12 +22,14 @@ pub fn main() !void {
         if (e.input.isKeyDown(engine.Key.a)) player_x -= @floatCast(speed * delta);
         if (e.input.isKeyDown(engine.Key.d)) player_x += @floatCast(speed * delta);
 
+        e.setCamera(player_x, player_y);
+
         var row: f32 = 0;
         while (row < 10) : (row += 1) {
             var col: f32 = 0;
             while (col < 5) : (col += 1) {
                 const u_offset: f32 = if (@rem(col, 2.0) == 0.0) 0.0 else 0.5;
-                e.drawSprite(col * 64 + player_x, row * 64 + player_y, 64, 64, .{
+                e.drawSprite(col * 64, row * 64, 64, 64, .{
                     .u0 = u_offset,
                     .v0 = 0,
                     .u1 = u_offset + 0.5,

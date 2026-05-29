@@ -53,6 +53,13 @@ pub const Engine = struct {
 
     last_frame: f64,
 
+    camera_x: f32,
+    camera_y: f32,
+    view: math.Mat4,
+    proj: math.Mat4,
+    fb_w: f32,
+    fb_h: f32,
+
     pub fn getDelta(self: *Engine) f64 {
         const now = c.glfwGetTime();
         const dt = now - self.last_frame;
@@ -346,6 +353,15 @@ pub const Engine = struct {
 
             .input = input.Input.init(),
             .last_frame = c.glfwGetTime(),
+
+            .camera_x = 0,
+            .camera_y = 0,
+
+            .view = math.Mat4.identity(),
+            .proj = math.Mat4.identity(),
+
+            .fb_w = 0,
+            .fb_h = 0,
         };
 
         engine.configureSurface(fb_w, fb_h);
@@ -470,8 +486,12 @@ pub const Engine = struct {
         // So 0x0 becomes the top-left corner
         // With higher X we go to right
         // With higher Y we go to bottom
-        const proj = math.Mat4.ortho(0, @floatFromInt(w), @floatFromInt(h), 0, -1, 1);
-        c.wgpuQueueWriteBuffer(self.queue, self.uniform_buffer, 0, &proj, @sizeOf(math.Mat4));
+        self.fb_w = @floatFromInt(w);
+        self.fb_h = @floatFromInt(h);
+        self.proj = math.Mat4.ortho(0, self.fb_w, self.fb_h, 0, -1, 1);
+
+        self.rebuildView();
+        self.uploadCamera();
 
         const config: c.WGPUSurfaceConfiguration = .{
             .nextInChain = null,
@@ -569,6 +589,27 @@ pub const Engine = struct {
         _ = c.wgpuSurfacePresent(self.surface);
 
         c.wgpuTextureRelease(st.texture);
+    }
+
+    pub fn setCamera(self: *Engine, x: f32, y: f32) void {
+        self.camera_x = x;
+        self.camera_y = y;
+
+        self.rebuildView();
+        self.uploadCamera();
+    }
+
+    fn rebuildView(self: *Engine) void {
+        self.view = math.Mat4.translate(
+            -self.camera_x + self.fb_w / 2,
+            -self.camera_y + self.fb_h / 2,
+            0,
+        );
+    }
+
+    fn uploadCamera(self: *Engine) void {
+        const vp = math.Mat4.mult(self.proj, self.view);
+        c.wgpuQueueWriteBuffer(self.queue, self.uniform_buffer, 0, &vp, @sizeOf(math.Mat4));
     }
 };
 

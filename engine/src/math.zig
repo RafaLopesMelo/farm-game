@@ -2,12 +2,14 @@ pub const Mat4 = extern struct {
     data: [16]f32,
 
     pub fn identity() Mat4 {
-        return .{ .data = .{
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1,
-        } };
+        return .{
+            .data = .{
+                1, 0, 0, 0, // Column 1
+                0, 1, 0, 0, // Column 2
+                0, 0, 1, 0, // Column 3
+                0, 0, 0, 1, // Column 4
+            },
+        };
     }
 
     /// Builds a matrix that maps a 3D box of the game world into the GPU's clip-space cube.
@@ -67,5 +69,35 @@ pub const Mat4 = extern struct {
         m.data[14] = -near / fn_;
         m.data[15] = 1.0;
         return m;
+    }
+
+    pub fn translate(x: f32, y: f32, z: f32) Mat4 {
+        var m = Mat4.identity();
+        m.data[12] = x; // 4x1 slot
+        m.data[13] = y; // 4x2 slot
+        m.data[14] = z; // 4x3 slot
+        return m;
+    }
+
+    pub fn mult(a: Mat4, b: Mat4) Mat4 {
+        var r = Mat4{ .data = .{0} ** 16 };
+
+        var col: usize = 0;
+        while (col < 4) : (col += 1) {
+            var row: usize = 0;
+
+            while (row < 4) : (row += 1) {
+                var sum: f32 = 0;
+                var k: usize = 0;
+
+                while (k < 4) : (k += 1) {
+                    sum += a.data[k * 4 + row] * b.data[col * 4 + k];
+                }
+
+                r.data[col * 4 + row] = sum;
+            }
+        }
+
+        return r;
     }
 };
