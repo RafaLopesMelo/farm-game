@@ -233,10 +233,22 @@ pub const Engine = struct {
 
         const shader = c.wgpuDeviceCreateShaderModule(device.?, &shader_desc);
 
+        const blend: c.WGPUBlendState = .{
+            .color = .{
+                .srcFactor = c.WGPUBlendFactor_SrcAlpha,
+                .dstFactor = c.WGPUBlendFactor_OneMinusSrcAlpha,
+                .operation = c.WGPUBlendOperation_Add,
+            },
+            .alpha = .{
+                .srcFactor = c.WGPUBlendFactor_One,
+                .dstFactor = c.WGPUBlendFactor_OneMinusSrcAlpha,
+                .operation = c.WGPUBlendOperation_Add,
+            },
+        };
         const color_target: c.WGPUColorTargetState = .{
             .nextInChain = null,
             .format = format,
-            .blend = null,
+            .blend = &blend,
             .writeMask = c.WGPUColorWriteMask_All,
         };
 
