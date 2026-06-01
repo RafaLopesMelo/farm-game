@@ -414,7 +414,7 @@ pub const Engine = struct {
     }
 
     pub fn shouldClose(self: *Engine) bool {
-        return c.glfwWindowShouldClose(self.w) == 0;
+        return c.glfwWindowShouldClose(self.w) != 0;
     }
 
     pub fn pollEvents(_: *Engine) void {
