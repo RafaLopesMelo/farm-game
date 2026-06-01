@@ -1,12 +1,22 @@
 const std = @import("std");
 const engine = @import("engine");
 const c = @import("engine").c;
+const tile = @import("tile.zig");
 
 var player_x: f32 = 100;
 var player_y: f32 = 100;
 const speed: f64 = 1024;
 
+fn uvForKind(kind: tile.TileKind) engine.UvRect {
+    return switch (kind) {
+        .grass => .{ .u0 = 0, .v0 = 0, .u1 = 0.5, .v1 = 1 },
+        .water => .{ .u0 = 0.5, .v0 = 0, .u1 = 1, .v1 = 1 },
+    };
+}
+
 pub fn main() !void {
+    const tilemap = try tile.Tilemap.init(std.heap.page_allocator, 10, 10, 64);
+
     var e = engine.Engine.init().?;
     defer e.deinit();
     e.run();
@@ -24,20 +34,20 @@ pub fn main() !void {
 
         e.setCamera(player_x, player_y);
 
-        var row: f32 = 0;
-        while (row < 10) : (row += 1) {
-            var col: f32 = 0;
-            while (col < 5) : (col += 1) {
-                e.drawSprite(col * 64, row * 64, 64, 64, .{
-                    .u0 = 0.5,
-                    .v0 = 0,
-                    .u1 = 0.5,
-                    .v1 = 1,
-                });
-            }
+        for (tilemap.tiles, 0..) |kind, i| {
+            const x: f32 = @floatFromInt(i % tilemap.width);
+            const y: f32 = @floatFromInt(i / tilemap.height);
+
+            e.drawSprite(
+                x * tilemap.tile_size,
+                y * tilemap.tile_size,
+                tilemap.tile_size,
+                tilemap.tile_size,
+                uvForKind(kind),
+            );
         }
 
-        e.drawSprite(player_x, player_y, 64, 64, .{ .u0 = 0, .v0 = 0, .u1 = 0.5, .v1 = 1 });
+        e.drawSprite(player_x, player_y, 64, 64, .{ .u0 = 0.5, .v0 = 0, .u1 = 0.5, .v1 = 1 });
 
         e.endFrame();
     }
